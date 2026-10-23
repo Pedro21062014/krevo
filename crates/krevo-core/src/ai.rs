@@ -24,6 +24,9 @@ pub enum Provider {
     Deepseek,
     Mistral,
     Ollama,
+    /// Endpoint público gratuito (Pollinations), compatível com OpenAI.
+    /// Serve para o agente funcionar "de verdade" sem chave nenhuma.
+    Pollinations,
     Custom,
 }
 
@@ -38,6 +41,7 @@ impl Provider {
             "deepseek" => Ok(Self::Deepseek),
             "mistral" => Ok(Self::Mistral),
             "ollama" | "local" => Ok(Self::Ollama),
+            "pollinations" | "free" | "gratis" | "grátis" => Ok(Self::Pollinations),
             "custom" => Ok(Self::Custom),
             other => Err(Error::UnknownProvider(other.into())),
         }
@@ -53,6 +57,7 @@ impl Provider {
             Self::Deepseek => "deepseek",
             Self::Mistral => "mistral",
             Self::Ollama => "ollama",
+            Self::Pollinations => "pollinations",
             Self::Custom => "custom",
         }
     }
@@ -68,6 +73,7 @@ impl Provider {
             Self::Deepseek => "https://api.deepseek.com/chat/completions",
             Self::Mistral => "https://api.mistral.ai/v1/chat/completions",
             Self::Ollama => "http://localhost:11434/v1/chat/completions",
+            Self::Pollinations => "https://text.pollinations.ai/openai",
             Self::Custom => "",
         }
     }
@@ -82,12 +88,29 @@ impl Provider {
             Self::Deepseek => "deepseek-chat",
             Self::Mistral => "mistral-large-latest",
             Self::Ollama => "llama3.1",
+            Self::Pollinations => "openai",
             Self::Custom => "",
         }
     }
 
     pub fn needs_key(&self) -> bool {
-        !matches!(self, Self::Ollama)
+        !matches!(self, Self::Ollama | Self::Pollinations)
+    }
+
+    /// Rótulo curto para a interface.
+    pub fn label(&self) -> &'static str {
+        match self {
+            Self::OpenAi => "OpenAI",
+            Self::Anthropic => "Anthropic (Claude)",
+            Self::Gemini => "Google Gemini",
+            Self::OpenRouter => "OpenRouter",
+            Self::Groq => "Groq",
+            Self::Deepseek => "DeepSeek",
+            Self::Mistral => "Mistral",
+            Self::Ollama => "Ollama (local)",
+            Self::Pollinations => "Grátis, sem chave (Pollinations)",
+            Self::Custom => "Endpoint compatível (custom)",
+        }
     }
 }
 
@@ -258,6 +281,10 @@ pub fn build_chat_request(
             if provider == Provider::OpenRouter {
                 headers.push(("x-title".into(), "Krevo Studio".into()));
             }
+            if provider == Provider::Pollinations {
+                // o serviço público pede um referrer identificando o app
+                headers.push(("referer".into(), "https://github.com/Pedro21062014/krevo".into()));
+            }
             Ok(HttpRequest {
                 url: base,
                 method: "POST".into(),
@@ -314,6 +341,9 @@ pub fn parse_chat_response(provider: Provider, value: &Value) -> Result<String> 
                 .and_then(|e| e.get("message"))
                 .and_then(|m| m.as_str())
             {
+                return Err(Error::Other(msg.to_string()));
+            }
+            if let Some(msg) = value.get("error").and_then(|e| e.as_str()) {
                 return Err(Error::Other(msg.to_string()));
             }
             Err(Error::EmptyCompletion)
@@ -381,6 +411,40 @@ mod tests {
                 .unwrap();
         assert_eq!(req.url, "http://localhost:11434/v1/chat/completions");
         assert!(!req.headers.iter().any(|(k, _)| k == "authorization"));
+    }
+
+    #[test]
+    fn pollinations_is_free_and_openai_shaped() {
+        assert!(!Provider::Pollinations.needs_key());
+        let req = build_chat_request(
+            Provider::Pollinations,
+            &[ChatMessage::user("oi")],
+            &ChatOptions::default(),
+        )
+        .unwrap();
+        assert_eq!(req.url, "https://text.pollinations.ai/openai");
+        assert_eq!(req.body["model"], "openai");
+        assert!(req.headers.iter().any(|(k, _)| k == "referer"));
+        assert!(!req.headers.iter().any(|(k, _)| k == "authorization"));
+    }
+
+    #[test]
+    fn provider_ids_roundtrip() {
+        for p in [
+            Provider::OpenAi,
+            Provider::Anthropic,
+            Provider::Gemini,
+            Provider::OpenRouter,
+            Provider::Groq,
+            Provider::Deepseek,
+            Provider::Mistral,
+            Provider::Ollama,
+            Provider::Pollinations,
+            Provider::Custom,
+        ] {
+            assert_eq!(Provider::from_id(p.id()).unwrap(), p);
+        }
+        assert!(Provider::from_id("free").is_ok());
     }
 
     #[test]

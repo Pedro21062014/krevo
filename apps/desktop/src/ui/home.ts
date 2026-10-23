@@ -1,4 +1,4 @@
-/** Tela inicial do Krevo: criar novo, templates, elementos, fotos, IA e ajustes. */
+/** Tela inicial do Krevo — layout enxuto: navegação no topo, conteúdo denso. */
 
 import {
   FORMATS,
@@ -11,16 +11,17 @@ import {
   baseElement,
   gradient,
   iconDataUri,
-  placeholderImage,
   shapeEl,
   templateToPage,
   textEl,
   type Template,
 } from "../assets";
-import { appInfo, isDesktop, unsplashSearch, type AppInfo } from "../bridge";
+import { appInfo, isDesktop, PROVIDERS, unsplashSearch, type AppInfo } from "../bridge";
 import { store } from "../store";
 import type { Photo } from "../types";
-import { esc, formatDate, uid } from "../util";
+import { esc, formatDate } from "../util";
+import { agentMode, testAiConnection } from "./agent";
+import { kMark, logoLockup } from "./brand";
 import { icons } from "./icons";
 import { renderThumbFill } from "./render";
 
@@ -33,65 +34,52 @@ void appInfo().then((i) => {
   info = i;
 });
 
-const PROMPT_IDEAS = [
-  "Pitch deck para startup de energia solar",
-  "Post de lançamento de app de finanças",
-  "Relatório anual minimalista com gráficos",
-  "Story de promoção 50% off para loja de cosméticos",
+const IDEAS = [
+  "Capa de pitch deck para startup de energia solar",
+  "Post de lançamento para app de finanças pessoais",
+  "Relatório mensal minimalista em A4",
+  "Story de promoção para loja de cosméticos",
   "Currículo para vaga de product designer",
 ];
 
-function greeting(): string {
-  const hour = new Date().getHours();
-  if (hour < 6) return "Boa madrugada";
-  if (hour < 12) return "Bom dia";
-  if (hour < 18) return "Boa tarde";
-  return "Boa noite";
-}
+const TABS: [string, string][] = [
+  ["inicio", "Projetos"],
+  ["templates", "Templates"],
+  ["elementos", "Elementos"],
+  ["fotos", "Fotos"],
+  ["ia", "Agente de IA"],
+];
+
+const theme = (): "dark" | "light" => store.state.settings.theme;
 
 /* ------------------------------------------------------------------ */
-/* Blocos                                                              */
+/* Cromo                                                               */
 /* ------------------------------------------------------------------ */
 
-function rail(active: string): string {
-  const items: [string, string, string][] = [
-    ["inicio", "Início", icons.home],
-    ["templates", "Templates", icons.template],
-    ["elementos", "Elementos", icons.elements],
-    ["fotos", "Fotos & Unsplash", icons.photo],
-    ["ia", "Agente de IA", icons.sparkles],
-  ];
+function topbar(active: string): string {
+  const mode = agentMode();
+  const dot = mode === "demo" ? "off" : "";
+  const label = mode === "demo" ? "Modo demo" : mode === "free" ? "IA grátis ativa" : mode === "local" ? "Ollama local" : "API conectada";
   return `
-  <aside class="rail">
-    <div class="brand">
-      <div class="brand-mark">${icons.logo}</div>
-      <div>
-        <div class="brand-name">Krevo</div>
-      </div>
-      <span class="brand-badge">BETA</span>
-    </div>
-    ${items
-      .map(
-        ([id, label, icon]) => `
-      <button class="rail-item ${active === id ? "active" : ""}" data-action="tab" data-tab="${id}">
-        ${icon}<span>${label}</span>
-      </button>`,
-      )
-      .join("")}
-    <div class="rail-spacer"></div>
-    <button class="btn primary" data-action="new-blank" style="justify-content:center;margin-bottom:10px">
-      ${icons.plus} Novo projeto
-    </button>
-    <div class="rail-foot">
-      <button class="rail-item ${active === "ajustes" ? "active" : ""}" data-action="tab" data-tab="ajustes">
-        ${icons.settings}<span>Ajustes</span>
+  <header class="app-top">
+    <a class="logo" href="#" data-action="tab" data-tab="inicio" title="Krevo">
+      ${logoLockup(theme(), 19)}
+    </a>
+    <nav class="nav">
+      ${TABS.map(
+        ([id, label]) =>
+          `<button class="${active === id ? "active" : ""}" data-action="tab" data-tab="${id}">${label}</button>`,
+      ).join("")}
+    </nav>
+    <div class="spacer"></div>
+    <div class="top-actions">
+      <button class="pill ${mode === "demo" ? "" : "ok"}" data-action="tab" data-tab="ia" title="Estado do agente">
+        <span class="dot ${dot}"></span>${esc(label)}
       </button>
-      <div class="rail-user">
-        <span class="dot ${store.state.settings.apiKey || store.state.settings.provider === "ollama" ? "" : "off"}"></span>
-        <span>${info ? `${info.platform} · v${info.version}` : "conectando…"}</span>
-      </div>
+      <button class="btn ghost icon" data-action="tab" data-tab="ajustes" title="Ajustes">${icons.settings}</button>
+      <button class="btn primary" data-action="new-blank">${icons.plus} Novo</button>
     </div>
-  </aside>`;
+  </header>`;
 }
 
 function skeletons(count: number): string {
@@ -100,24 +88,21 @@ function skeletons(count: number): string {
       () => `
     <div class="sk-card">
       <div class="skeleton sk-thumb"></div>
-      <div class="skeleton sk-line w70"></div>
-      <div class="skeleton sk-line w40"></div>
+      <div class="skeleton sk-line w60"></div>
+      <div class="skeleton sk-line w35"></div>
     </div>`,
     )
     .join("");
 }
 
 function templateCard(t: Template): string {
-  const page = templateToPage(t);
   const holder = document.createElement("div");
-  holder.appendChild(renderThumbFill(page, 480, 300));
-  const preview = holder.innerHTML;
+  holder.appendChild(renderThumbFill(templateToPage(t), 480, 300));
   return `
     <button class="card" data-action="use-template" data-id="${t.id}">
-      <div class="card-thumb">${preview}<span class="card-badge">${esc(t.category)}</span></div>
+      <div class="card-thumb">${holder.innerHTML}<span class="card-badge">${esc(t.category)}</span></div>
       <div class="card-body">
-        <div class="card-title">${esc(t.name)}</div>
-        <div class="card-sub">${t.w}×${t.h}</div>
+        <div class="meta"><div class="card-title">${esc(t.name)}</div><div class="card-sub">${t.w}×${t.h}</div></div>
       </div>
     </button>`;
 }
@@ -129,364 +114,363 @@ function recentCard(item: { id: string; name: string; updatedAt: string; pages: 
     <div class="card" style="cursor:pointer" data-action="open-recent" data-id="${item.id}">
       <div class="card-thumb">
         ${holder.innerHTML}
-        <span class="card-badge">${item.pages} ${item.pages === 1 ? "página" : "páginas"}</span>
-        <button class="card-remove" data-action="delete-recent" data-id="${item.id}" title="Remover da lista">
-          ${icons.trash}
-        </button>
+        <span class="card-badge">${item.pages} ${item.pages === 1 ? "pág." : "págs."}</span>
+        <button class="card-remove" data-action="delete-recent" data-id="${item.id}" title="Remover da lista">${icons.trash}</button>
       </div>
       <div class="card-body">
-        <div class="card-title">${esc(item.name)}</div>
-        <div class="card-sub">${formatDate(item.updatedAt)}</div>
+        <div class="meta"><div class="card-title">${esc(item.name)}</div><div class="card-sub">${formatDate(item.updatedAt)}</div></div>
       </div>
     </div>`;
 }
 
-function formatGrid(): string {
-  return `<div class="grid formats">
-    ${FORMATS.map(
-      (f) => `
-      <button class="card" data-action="new-format" data-id="${f.id}">
-        <div class="card-thumb" style="aspect-ratio:4/3;display:grid;place-items:center">
-          <div style="width:44px;height:${Math.round((44 * f.h) / f.w)}px;border-radius:4px;background:var(--surface-3);border:1px solid var(--line-strong)"></div>
-        </div>
-        <div class="card-body">
-          <div class="card-title">${esc(f.name)}</div>
-          <div class="card-sub">${esc(f.hint)}</div>
-        </div>
-      </button>`,
-    ).join("")}
-  </div>`;
-}
+/* ------------------------------------------------------------------ */
+/* Abas                                                                */
+/* ------------------------------------------------------------------ */
 
-function promptBox(): string {
-  return `
-  <div class="promptbox">
-    <textarea id="brief" placeholder="Descreva o que você quer criar. Ex.: “pitch deck de 6 slides para uma marca de café artesanal, tons terrosos”"></textarea>
-    <div class="prompt-actions">
-      <span class="tiny muted">Formato:</span>
-      ${FORMATS.slice(0, 5)
-        .map(
-          (f, i) =>
-            `<button class="chip ${i === 0 ? "active" : ""}" data-action="pick-format" data-id="${f.id}">${esc(f.name)}</button>`,
-        )
-        .join("")}
-      <div class="spacer"></div>
-      <button class="btn" data-action="new-blank">${icons.plus} Em branco</button>
-      <button class="btn primary" data-action="generate">${icons.sparkles} Gerar com IA</button>
-    </div>
-  </div>`;
-}
-
-function homeTab(): string {
+function inicioTab(): string {
   const loading = store.state.loadingHome;
   const recent = store.state.recent;
   return `
-  <div class="hero">
-    <h1>${greeting()}. O que vamos criar hoje?</h1>
-    <p>PDF, apresentações, imagens, vídeo e muito mais — em um editor nativo em Rust, com um agente de IA ao lado e a sua própria API.</p>
-    ${promptBox()}
-  </div>
+  <section class="hero">
+    <span class="eyebrow"><span class="dot"></span> Krevo 0.2 · estúdio de design com IA</span>
+    <h1>O que você quer criar agora?</h1>
+    <p>PDF, apresentações, imagens, vídeo e mais — um editor nativo em Rust com um agente de IA ao lado. Descreva o design e ele monta no canvas.</p>
 
-  <div class="section-head">
-    <h2>Seus projetos</h2>
-    <span class="hint">${recent.length ? `${recent.length} recentes` : "tudo fica salvo na sua máquina"}</span>
-  </div>
-  <div class="grid">
-    ${
-      loading
-        ? skeletons(4)
-        : recent.length
-          ? recent.map((r) => recentCard(r)).join("")
-          : `<div class="card" style="padding:26px;grid-column:1/-1;align-items:center;text-align:center">
-               <div style="font-size:15px;font-weight:650;margin-bottom:6px">Nenhum projeto por aqui ainda</div>
-               <div class="tiny muted" style="max-width:420px">Escreva um briefing acima ou escolha um template abaixo. O Krevo abre em menos de um segundo.</div>
-             </div>`
-    }
-  </div>
+    <div class="composer">
+      <textarea id="brief" rows="2" placeholder="Ex.: proposta comercial em A4, tipografia grande, paleta neutra com um detalhe verde"></textarea>
+      <div class="composer-bar">
+        <div class="chips" id="format-chips">
+          ${FORMATS.slice(0, 4)
+            .map(
+              (f, i) =>
+                `<button class="chip ${i === 0 ? "active" : ""}" data-action="pick-format" data-id="${f.id}">${esc(f.name)}</button>`,
+            )
+            .join("")}
+        </div>
+        <span class="sep"></span>
+        <button class="btn small ghost" data-action="new-blank">${icons.plus} Em branco</button>
+        <div class="spacer"></div>
+        <button class="btn primary" data-action="generate">${icons.sparkles} Gerar com IA</button>
+      </div>
+    </div>
 
-  <div class="section-head">
-    <h2>Templates prontos</h2>
-    <button class="chip" data-action="tab" data-tab="templates">Ver todos ${TEMPLATES.length}</button>
-  </div>
-  <div class="grid">${TEMPLATES.slice(0, 4).map(templateCard).join("")}</div>
+    <div class="quick-row">
+      ${IDEAS.slice(0, 3)
+        .map((idea) => `<button class="quick-chip" data-action="use-idea" data-id="${esc(idea)}">${icons.sparkles} ${esc(idea)}</button>`)
+        .join("")}
+    </div>
+  </section>
 
-  <div class="section-head">
-    <h2>Comece por um formato</h2>
-    <span class="hint">páginas em px reais, prontas para exportar</span>
-  </div>
-  ${formatGrid()}
-  `;
+  <section class="section">
+    <div class="section-head">
+      <h2>Recentes</h2>
+      <span class="hint">${recent.length ? `${recent.length} projeto(s) neste computador` : "tudo fica salvo localmente"}</span>
+    </div>
+    <div class="grid">
+      ${
+        loading
+          ? skeletons(4)
+          : recent.length
+            ? recent.map((r) => recentCard(r)).join("")
+            : `<div class="empty-state" style="grid-column:1/-1">
+                 <b>Nenhum projeto ainda</b>
+                 Escreva um briefing acima, escolha um template ou comece por um formato.
+               </div>`
+      }
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <h2>Comece por um formato</h2>
+      <span class="hint">páginas em pixels reais</span>
+    </div>
+    <div class="grid formats">
+      ${FORMATS.map(
+        (f) => `
+        <button class="card" data-action="new-format" data-id="${f.id}">
+          <div class="card-thumb" style="aspect-ratio:4/3;display:grid;place-items:center;background:var(--surface-2)">
+            <div style="width:34px;height:${Math.round((34 * f.h) / f.w)}px;border-radius:3px;background:color-mix(in srgb, var(--text) 12%, transparent);border:1px solid color-mix(in srgb, var(--text) 18%, transparent)"></div>
+          </div>
+          <div class="card-body"><div class="meta"><div class="card-title">${esc(f.name)}</div><div class="card-sub">${f.w}×${f.h}</div></div></div>
+        </button>`,
+      ).join("")}
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <h2>Templates</h2>
+      <button class="chip" data-action="tab" data-tab="templates">Ver todos · ${TEMPLATES.length}</button>
+    </div>
+    <div class="grid">${TEMPLATES.slice(0, 4).map(templateCard).join("")}</div>
+  </section>`;
 }
 
 function templatesTab(): string {
   const list = TEMPLATES.filter((t) => templateFilter === "Todos" || t.category === templateFilter);
   return `
-  <div class="section-head" style="margin-top:0">
-    <h2>Templates</h2>
-    <span class="hint">${list.length} modelos · feitos para editar</span>
-  </div>
-  <div class="chips" style="margin-bottom:18px">
-    ${TEMPLATE_CATEGORIES.map(
-      (c) =>
-        `<button class="chip ${c === templateFilter ? "active" : ""}" data-action="filter-templates" data-id="${esc(c)}">${esc(c)}</button>`,
-    ).join("")}
-  </div>
-  <div class="grid">${list.map(templateCard).join("")}</div>`;
+  <section class="section" style="margin-top:8px">
+    <div class="section-head">
+      <h2>Templates</h2>
+      <span class="hint">${list.length} modelos editáveis</span>
+    </div>
+    <div class="chips" style="margin-bottom:16px">
+      ${TEMPLATE_CATEGORIES.map(
+        (c) => `<button class="chip ${c === templateFilter ? "active" : ""}" data-action="filter-templates" data-id="${esc(c)}">${esc(c)}</button>`,
+      ).join("")}
+    </div>
+    <div class="grid">${list.map(templateCard).join("")}</div>
+  </section>`;
 }
 
-function elementGrid(): string {
-  const shapes = [
-    { label: "Retângulo", kind: "rect" as const },
-    { label: "Círculo", kind: "ellipse" as const },
-    { label: "Linha", kind: "line" as const },
-    { label: "Texto", kind: "text" as const },
+function elementosTab(): string {
+  const shapes: { label: string; kind: "rect" | "ellipse" | "line" | "text"; icon: string }[] = [
+    { label: "Retângulo", kind: "rect", icon: icons.square },
+    { label: "Elipse", kind: "ellipse", icon: icons.circle },
+    { label: "Linha", kind: "line", icon: icons.line },
+    { label: "Texto", kind: "text", icon: icons.text },
   ];
   return `
-  <div class="section-head" style="margin-top:0"><h2>Formas e textos</h2></div>
-  <div class="grid tight">
-    ${shapes
-      .map(
-        (s) => `
-      <button class="card" data-action="use-element" data-kind="${s.kind}">
-        <div class="card-thumb" style="aspect-ratio:3/2;display:grid;place-items:center;color:var(--muted)">
-          ${s.kind === "rect" ? icons.square : s.kind === "ellipse" ? icons.circle : s.kind === "line" ? icons.line : icons.text}
-        </div>
-        <div class="card-body"><div class="card-title">${s.label}</div></div>
-      </button>`,
-      )
-      .join("")}
-  </div>
+  <section class="section" style="margin-top:8px">
+    <div class="section-head"><h2>Formas e textos</h2></div>
+    <div class="grid dense">
+      ${shapes
+        .map(
+          (s) => `
+        <button class="card" data-action="use-element" data-kind="${s.kind}">
+          <div class="card-thumb" style="aspect-ratio:3/2;display:grid;place-items:center;color:var(--muted)">${s.icon}</div>
+          <div class="card-body"><div class="meta"><div class="card-title">${s.label}</div></div></div>
+        </button>`,
+        )
+        .join("")}
+    </div>
+  </section>
 
-  <div class="section-head"><h2>Gradientes</h2></div>
-  <div class="grid tight">
-    ${GRADIENTS.map(
-      (g) => `
-      <button class="card" data-action="use-gradient" data-id="${g.id}">
-        <div class="card-thumb" style="aspect-ratio:3/2;background:linear-gradient(${g.value.angle}deg, ${g.value.stops
-          .map((s) => s.color)
-          .join(",")})"></div>
-        <div class="card-body"><div class="card-title">${esc(g.name)}</div></div>
-      </button>`,
-    ).join("")}
-  </div>
+  <section class="section">
+    <div class="section-head"><h2>Gradientes</h2><span class="hint">aplicam como fundo</span></div>
+    <div class="grid dense">
+      ${GRADIENTS.map(
+        (g) => `
+        <button class="card" data-action="use-gradient" data-id="${g.id}">
+          <div class="card-thumb" style="aspect-ratio:3/2;background:linear-gradient(${g.value.angle}deg, ${g.value.stops.map((s) => s.color).join(",")})"></div>
+          <div class="card-body"><div class="meta"><div class="card-title">${esc(g.name)}</div></div></div>
+        </button>`,
+      ).join("")}
+    </div>
+  </section>
 
-  <div class="section-head"><h2>Ícones</h2><span class="hint">${ICONS.length} vetores</span></div>
-  <div class="grid tight">
-    ${ICONS.map(
-      (icon) => `
-      <button class="card" data-action="use-icon" data-id="${icon.name}" title="${icon.name}">
-        <div class="card-thumb" style="aspect-ratio:1;display:grid;place-items:center">
-          <img src="${iconDataUri(icon.name, "#cfc8ff")}" style="width:34px;height:34px" alt="${icon.name}" />
-        </div>
-      </button>`,
-    ).join("")}
-  </div>
+  <section class="section">
+    <div class="section-head"><h2>Ícones</h2><span class="hint">${ICONS.length} vetores</span></div>
+    <div class="grid dense">
+      ${ICONS.map(
+        (icon) => `
+        <button class="card" data-action="use-icon" data-id="${icon.name}" title="${icon.name}">
+          <div class="card-thumb" style="aspect-ratio:1;display:grid;place-items:center">
+            <img src="${iconDataUri(icon.name, "#c9cbcd")}" style="width:26px;height:26px" alt="${icon.name}" />
+          </div>
+        </button>`,
+      ).join("")}
+    </div>
+  </section>
 
-  <div class="section-head"><h2>Paletas</h2></div>
-  <div class="grid">
-    ${PALETTES.map(
-      (p) => `
-      <div class="card">
-        <div style="display:flex;height:64px">
-          ${p.colors.map((c) => `<div style="flex:1;background:${c}"></div>`).join("")}
-        </div>
-        <div class="card-body row">
-          <div class="card-title grow">${esc(p.name)}</div>
-          <button class="btn small" data-action="use-palette" data-id="${p.id}">Aplicar</button>
-        </div>
-      </div>`,
-    ).join("")}
-  </div>`;
+  <section class="section">
+    <div class="section-head"><h2>Paletas</h2><span class="hint">definem a cor base da marca usada pela IA</span></div>
+    <div class="grid">
+      ${PALETTES.map(
+        (p) => `
+        <div class="card">
+          <div style="display:flex;height:56px">
+            ${p.colors.map((c) => `<div style="flex:1;background:${c}"></div>`).join("")}
+          </div>
+          <div class="card-body">
+            <div class="meta grow"><div class="card-title">${esc(p.name)}</div><div class="card-sub">${p.colors.length} cores</div></div>
+            <button class="btn small" data-action="use-palette" data-id="${p.id}">Aplicar</button>
+          </div>
+        </div>`,
+      ).join("")}
+    </div>
+  </section>`;
 }
 
-function photosTab(): string {
-  const query = photoQuery;
+function fotosTab(): string {
   const photos = photoCache?.photos ?? [];
   const hint = photoCache?.hint ?? "";
   return `
-  <div class="section-head" style="margin-top:0">
-    <h2>Fotos</h2>
-    <span class="hint">${isDesktop() ? "Unsplash com a sua chave · acervo local sempre disponível" : "acervo local (o Unsplash funciona no app desktop)"}</span>
-  </div>
-  <div class="row" style="margin-bottom:16px;gap:8px;flex-wrap:wrap">
-    <input class="input" id="photo-q" placeholder="Buscar fotos: café, montanha, escritório…" value="${esc(query)}" style="max-width:340px" />
-    <button class="btn" data-action="search-photos">${icons.photo} Buscar</button>
-    <div class="spacer grow"></div>
-    ${STOCK_CATEGORIES.slice(0, 5)
-      .map((c) => `<button class="chip" data-action="photo-tag" data-id="${esc(c)}">${esc(c)}</button>`)
-      .join("")}
-  </div>
-  ${hint ? `<div class="tiny muted" style="margin-bottom:12px">${esc(hint)}</div>` : ""}
-  <div class="grid tight">
-    ${
-      photos.length
-        ? photos
-            .map(
-              (p) => `
-      <button class="card" data-action="use-photo" data-id="${esc(p.id)}" title="${esc(p.description)}">
-        <div class="card-thumb" style="aspect-ratio:3/2">
-          <img src="${p.thumb}" alt="${esc(p.description)}" loading="lazy" />
-          <span class="card-badge">${esc(p.provider === "unsplash" ? p.author : "Krevo")}</span>
-        </div>
-      </button>`,
-            )
-            .join("")
-        : skeletons(8)
-    }
-  </div>`;
-}
-
-function providerOptions(current: string): string {
-  const list: [string, string][] = [
-    ["openai", "OpenAI (GPT)"],
-    ["anthropic", "Anthropic (Claude)"],
-    ["gemini", "Google Gemini"],
-    ["openrouter", "OpenRouter"],
-    ["groq", "Groq"],
-    ["deepseek", "DeepSeek"],
-    ["mistral", "Mistral"],
-    ["ollama", "Ollama (local, sem chave)"],
-    ["custom", "Endpoint compatível (custom)"],
-  ];
-  return list
-    .map(([id, label]) => `<option value="${id}" ${id === current ? "selected" : ""}>${label}</option>`)
-    .join("");
+  <section class="section" style="margin-top:8px">
+    <div class="section-head">
+      <h2>Fotos</h2>
+      <span class="hint">${isDesktop() ? "Unsplash com a sua chave · acervo local sempre disponível" : "acervo local · Unsplash no app desktop"}</span>
+    </div>
+    <div class="row wrap" style="margin-bottom:14px">
+      <input class="input" id="photo-q" placeholder="Buscar: café, montanha, escritório…" value="${esc(photoQuery)}" style="max-width:320px" />
+      <button class="btn" data-action="search-photos">${icons.photo} Buscar</button>
+      <span class="sep" style="width:1px;height:18px;background:var(--line)"></span>
+      ${STOCK_CATEGORIES.slice(0, 5)
+        .map((c) => `<button class="chip" data-action="photo-tag" data-id="${esc(c)}">${esc(c)}</button>`)
+        .join("")}
+    </div>
+    ${hint ? `<div class="tiny muted" style="margin-bottom:12px">${esc(hint)}</div>` : ""}
+    <div class="grid dense">
+      ${
+        photos.length
+          ? photos
+              .map(
+                (p) => `
+          <button class="card" data-action="use-photo" data-id="${esc(p.id)}" title="${esc(p.description)}">
+            <div class="card-thumb" style="aspect-ratio:3/2">
+              <img src="${p.thumb}" alt="${esc(p.description)}" loading="lazy" />
+              <span class="card-badge">${esc(p.provider === "unsplash" ? p.author : "local")}</span>
+            </div>
+          </button>`,
+              )
+              .join("")
+          : skeletons(8)
+      }
+    </div>
+  </section>`;
 }
 
 function iaTab(): string {
   const s = store.state.settings;
+  const mode = agentMode();
   return `
-  <div class="section-head" style="margin-top:0">
-    <h2>Agente de IA</h2>
-    <span class="hint">traga a sua chave — o Krevo não cobra nem repassa tokens</span>
-  </div>
-  <div class="grid" style="grid-template-columns:1.15fr 0.85fr">
-    <div class="card" style="padding:18px;gap:14px;display:flex;flex-direction:column">
-      <div class="field">
-        <label>Provedor</label>
-        <select class="select" id="set-provider">${providerOptions(s.provider)}</select>
-      </div>
-      <div class="field">
-        <label>Chave de API ${s.provider === "ollama" ? "(dispensada no Ollama)" : ""}</label>
-        <input class="input" id="set-key" type="password" placeholder="sk-…" value="${esc(s.apiKey)}" autocomplete="off" />
-        <span class="tiny muted">Fica só no seu computador (cofre local do app). Nunca sobe para nossos servidores.</span>
-      </div>
-      <div class="field-row">
+  <section class="section" style="margin-top:8px">
+    <div class="section-head">
+      <h2>Agente de IA</h2>
+      <span class="hint">escolha como o agente pensa — grátis, com a sua chave ou local</span>
+    </div>
+
+    <div class="grid" style="grid-template-columns:1.2fr 0.8fr;align-items:start">
+      <div class="card" style="padding:16px;gap:14px;display:flex;flex-direction:column">
         <div class="field">
-          <label>Modelo (opcional)</label>
-          <input class="input" id="set-model" placeholder="padrão do provedor" value="${esc(s.model)}" />
+          <label>Provedor</label>
+          <select class="select" id="set-provider">
+            ${PROVIDERS.map(
+              (p) => `<option value="${p.id}" ${p.id === s.provider ? "selected" : ""}>${esc(p.label)} — ${esc(p.hint)}</option>`,
+            ).join("")}
+          </select>
         </div>
+
         <div class="field">
-          <label>URL base (opcional)</label>
-          <input class="input" id="set-base" placeholder="para proxies/custom" value="${esc(s.baseUrl)}" />
+          <label>Chave de API <span class="tiny muted" style="text-transform:none">${s.provider === "pollinations" || s.provider === "ollama" ? "· dispensada" : ""}</span></label>
+          <input class="input" id="set-key" type="password" placeholder="sk-…" value="${esc(s.apiKey)}" autocomplete="off" />
+          <span class="tiny muted">Fica só no seu computador, no armazenamento do app. Nunca passa por servidor nosso.</span>
         </div>
+
+        <div class="field-row">
+          <div class="field"><label>Modelo</label><input class="input" id="set-model" placeholder="padrão do provedor" value="${esc(s.model)}" /></div>
+          <div class="field"><label>URL base</label><input class="input" id="set-base" placeholder="proxies/custom" value="${esc(s.baseUrl)}" /></div>
+        </div>
+
+        <div class="row wrap">
+          <button class="btn primary" data-action="save-ai">${icons.check} Salvar</button>
+          <button class="btn" data-action="test-ai">${icons.refresh} Testar conexão</button>
+          <button class="btn ghost" data-action="tab" data-tab="ajustes">Mais ajustes</button>
+        </div>
+        <div class="empty-note" id="ai-test-result"></div>
       </div>
-      <div class="row">
-        <button class="btn primary" data-action="save-ai">${icons.check} Salvar</button>
-        <button class="btn" data-action="test-ai">${icons.refresh} Testar conexão</button>
-        <a class="btn ghost" href="https://github.com/Pedro21062014/krevo#chaves-de-api" target="_blank" rel="noreferrer">Onde pegar minha chave</a>
+
+      <div class="card" style="padding:16px;gap:10px;display:flex;flex-direction:column">
+        <div class="group-title">Como o agente trabalha</div>
+        <div class="tiny muted" style="line-height:1.75">
+          1. Recebe o grid, a margem segura e a paleta da sua marca.<br />
+          2. Devolve um <b>plano de design em JSON</b> (elementos com x/y/w/h).<br />
+          3. O Krevo aplica no canvas — você arrasta e refina.
+        </div>
+        <div class="divider"></div>
+        <div class="row" style="justify-content:space-between">
+          <span class="tiny muted">Estado</span>
+          <span class="pill ${mode === "demo" ? "" : "ok"}">${esc(mode === "demo" ? "modo demo" : mode === "free" ? "IA grátis" : mode === "local" ? "local" : "chave própria")}</span>
+        </div>
+        <label class="row tiny muted" style="gap:8px">
+          <input type="checkbox" id="set-demo" ${s.autoDemo ? "checked" : ""} />
+          Usar gerador local quando nada estiver conectado
+        </label>
+        <div class="divider"></div>
+        <div class="row wrap">
+          <span class="pill">${esc(info?.pdfEngine ? "PDF vetorial Rust" : "PDF vetorial")}</span>
+          <span class="pill">${esc(info?.platform ?? "desktop")}</span>
+          <span class="pill">v${esc(info?.version ?? "0.2.0")}</span>
+        </div>
       </div>
     </div>
-    <div class="card" style="padding:18px;display:flex;flex-direction:column;gap:10px">
-      <div class="group-title" style="margin:0">Como funciona</div>
-      <div class="tiny muted" style="line-height:1.75">
-        1. Você conecta a sua chave (ou o Ollama local).<br />
-        2. O agente recebe o grid da página, a paleta da marca e o seu briefing.<br />
-        3. Ele devolve um <b>plano de design em JSON</b> — nada de código.<br />
-        4. O Krevo aplica os elementos no canvas: você arrasta, edita e exporta.
-      </div>
-      <div class="divider"></div>
-      <div class="group-title" style="margin:0">Modo demo</div>
-      <label class="row tiny muted" style="gap:8px">
-        <input type="checkbox" id="set-demo" ${s.autoDemo ? "checked" : ""} />
-        Gerar layouts localmente quando não houver chave (offline).
-      </label>
-      <div class="divider"></div>
-      <div class="row wrap">
-        <span class="pill ok">${info?.pdfEngine ? "PDF vetorial em Rust" : "PDF vetorial"}</span>
-        <span class="pill">${info?.platform ?? "desktop"}</span>
-        <span class="pill">${info?.version ? `v${info.version}` : "v0.1.0"}</span>
-      </div>
-    </div>
-  </div>`;
+  </section>`;
 }
 
-function settingsTab(): string {
+function ajustesTab(): string {
   const s = store.state.settings;
   return `
-  <div class="section-head" style="margin-top:0"><h2>Ajustes</h2></div>
-  <div class="grid" style="grid-template-columns:1fr 1fr">
-    <div class="card" style="padding:18px;display:flex;flex-direction:column;gap:14px">
-      <div class="field">
-        <label>Aparência</label>
-        <div class="seg">
-          <button class="${s.theme === "dark" ? "active" : ""}" data-action="set-theme" data-id="dark">Escuro</button>
-          <button class="${s.theme === "light" ? "active" : ""}" data-action="set-theme" data-id="light">Claro</button>
+  <section class="section" style="margin-top:8px">
+    <div class="section-head"><h2>Ajustes</h2></div>
+    <div class="grid" style="grid-template-columns:1fr 1fr;align-items:start">
+      <div class="card" style="padding:16px;display:flex;flex-direction:column;gap:14px">
+        <div class="field">
+          <label>Aparência</label>
+          <div class="seg">
+            <button class="${s.theme === "dark" ? "active" : ""}" data-action="set-theme" data-id="dark">Escuro</button>
+            <button class="${s.theme === "light" ? "active" : ""}" data-action="set-theme" data-id="light">Claro</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>Chave do Unsplash (Access Key)</label>
+          <input class="input" id="set-unsplash" placeholder="cole sua access key" value="${esc(s.unsplashKey)}" />
+          <span class="tiny muted">Crie grátis em unsplash.com/developers. Sem chave, usamos o acervo local.</span>
+        </div>
+        <div class="row wrap">
+          <button class="btn" data-action="save-unsplash">${icons.check} Salvar chave</button>
+          <button class="btn ghost" data-action="clear-data">${icons.trash} Limpar dados locais</button>
         </div>
       </div>
-      <div class="field">
-        <label>Chave do Unsplash (Access Key)</label>
-        <input class="input" id="set-unsplash" placeholder="cole sua access key" value="${esc(s.unsplashKey)}" />
-        <span class="tiny muted">Crie grátis em unsplash.com/developers. Sem chave, o Krevo usa o acervo local.</span>
-      </div>
-      <div class="row">
-        <button class="btn" data-action="save-unsplash">${icons.check} Salvar chave</button>
-        <button class="btn ghost" data-action="clear-data">${icons.trash} Limpar dados locais</button>
-      </div>
-    </div>
-    <div class="card" style="padding:18px;display:flex;flex-direction:column;gap:10px">
-      <div class="group-title" style="margin:0">Sobre</div>
-      <div class="tiny muted" style="line-height:1.8">
-        <b>Krevo</b> ${info?.version ? `v${info.version}` : "v0.1.0"} · ${info?.platform ?? "desktop"} ${info?.arch ?? ""}<br />
-        Motor: ${esc(info?.engine ?? "krevo-core")}<br />
-        PDF: ${esc(info?.pdfEngine ?? "Rust nativo")}<br />
-        Interface: TypeScript + Vite · App: Tauri 2
-      </div>
-      <div class="divider"></div>
-      <div class="row wrap">
-        <a class="btn small" href="https://github.com/Pedro21062014/krevo" target="_blank" rel="noreferrer">GitHub</a>
-        <a class="btn small" href="https://github.com/Pedro21062014/krevo/releases" target="_blank" rel="noreferrer">Downloads</a>
-        <a class="btn small" href="https://github.com/Pedro21062014/krevo/issues" target="_blank" rel="noreferrer">Reportar bug</a>
-      </div>
-      <div class="tiny muted">Feito com Rust, carinho e um pouco de café. Licença MIT.</div>
-    </div>
-  </div>`;
-}
 
-/* ------------------------------------------------------------------ */
-/* Montagem                                                            */
-/* ------------------------------------------------------------------ */
+      <div class="card" style="padding:16px;display:flex;flex-direction:column;gap:10px">
+        <div class="group-title">Sobre</div>
+        <div class="tiny muted" style="line-height:1.8">
+          <b>Krevo</b> v${esc(info?.version ?? "0.2.0")} · ${esc(info?.platform ?? "desktop")} ${esc(info?.arch ?? "")}<br />
+          Motor: ${esc(info?.engine ?? "krevo-core")}<br />
+          PDF: ${esc(info?.pdfEngine ?? "Rust nativo")}<br />
+          Interface: TypeScript + Vite · App: Tauri 2
+        </div>
+        <div class="divider"></div>
+        <div class="row wrap">
+          <a class="btn small" href="https://github.com/Pedro21062014/krevo" target="_blank" rel="noreferrer">GitHub</a>
+          <a class="btn small" href="https://github.com/Pedro21062014/krevo/releases" target="_blank" rel="noreferrer">Downloads</a>
+          <a class="btn small" href="https://github.com/Pedro21062014/krevo/issues" target="_blank" rel="noreferrer">Suporte</a>
+        </div>
+        <div class="tiny muted">MIT · feito com Rust e café.</div>
+      </div>
+    </div>
+  </section>`;
+}
 
 function tabContent(tab: string): string {
   switch (tab) {
     case "templates":
       return templatesTab();
     case "elementos":
-      return elementGrid();
+      return elementosTab();
     case "fotos":
-      return photosTab();
+      return fotosTab();
     case "ia":
       return iaTab();
     case "ajustes":
-      return settingsTab();
+      return ajustesTab();
     default:
-      return homeTab();
+      return inicioTab();
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* Montagem                                                            */
+/* ------------------------------------------------------------------ */
 
 export function mountHome(root: HTMLElement): void {
   const state = store.state;
   document.documentElement.dataset.theme = state.settings.theme;
   root.innerHTML = `
-    <div class="shell">
-      ${rail(state.homeTab)}
-      <div class="main"><div class="page">${tabContent(state.homeTab)}</div></div>
-    </div>
-    <div class="toasts">
-      ${state.toasts
-        .map((t) => `<div class="toast ${t.kind}">${esc(t.text)}</div>`)
-        .join("")}
-    </div>`;
+    ${topbar(state.homeTab)}
+    <div class="page"><div class="page-inner">${tabContent(state.homeTab)}</div></div>
+    <div class="toasts">${state.toasts.map((t) => `<div class="toast ${t.kind}">${esc(t.text)}</div>`).join("")}</div>`;
 
   root.querySelectorAll<HTMLElement>("[data-action]").forEach((node) => {
     node.addEventListener("click", (event) => onAction(event, node));
@@ -538,23 +522,23 @@ function bindSettingInputs(root: HTMLElement): void {
 /* Ações                                                               */
 /* ------------------------------------------------------------------ */
 
+let pendingFormat = "slide-hd";
+
 async function generateFromPrompt(brief: string): Promise<void> {
   const { generateDesign } = await import("./agent");
-  const formatId = pendingFormat;
-  const format = FORMATS.find((f) => f.id === formatId) ?? FORMATS[0];
+  const format = FORMATS.find((f) => f.id === pendingFormat) ?? FORMATS[0];
   store.createProject(brief.slice(0, 42) || "Design com IA", format.w, format.h);
   await generateDesign(brief);
 }
 
-let pendingFormat = "slide-hd";
-
 async function runPhotoSearch(query: string): Promise<void> {
   photoQuery = query;
   photoCache = null;
-  mountHome(document.getElementById("app") as HTMLElement);
+  const app = document.getElementById("app") as HTMLElement;
+  mountHome(app);
   const result = await unsplashSearch(query, store.state.settings.unsplashKey);
   photoCache = { query, photos: result.photos, hint: result.hint };
-  if (store.state.homeTab === "fotos") mountHome(document.getElementById("app") as HTMLElement);
+  if (store.state.homeTab === "fotos") mountHome(app);
 }
 
 function createWithElement(build: (page: { width: number; height: number }) => void): void {
@@ -566,6 +550,7 @@ function createWithElement(build: (page: { width: number; height: number }) => v
 function onAction(event: Event, node: HTMLElement): void {
   const action = node.dataset.action;
   const id = node.dataset.id ?? "";
+
   if (action === "tab") {
     const tab = node.dataset.tab as never;
     store.patch({ homeTab: tab });
@@ -588,6 +573,11 @@ function onAction(event: Event, node: HTMLElement): void {
     event.stopPropagation();
     return;
   }
+  if (action === "use-idea") {
+    pendingFormat = "slide-hd";
+    void generateFromPrompt(id);
+    return;
+  }
   if (action === "new-format") {
     const format = FORMATS.find((f) => f.id === id);
     if (format) store.createProject(format.name, format.w, format.h);
@@ -596,7 +586,7 @@ function onAction(event: Event, node: HTMLElement): void {
   if (action === "generate") {
     const brief = (document.getElementById("brief") as HTMLTextAreaElement | null)?.value ?? "";
     if (!brief.trim()) {
-      store.toast("Escreva um briefing para o agente — ou use o modo demo.", "info");
+      store.toast("Descreva o que você quer criar — ou escolha uma ideia abaixo.", "info");
       return;
     }
     void generateFromPrompt(brief);
@@ -642,8 +632,8 @@ function onAction(event: Event, node: HTMLElement): void {
         store.addElement(line);
       } else {
         store.addElement(
-          shapeEl(kind, page.width / 2 - 180, page.height / 2 - 180, 360, 360, "#6C5CE7", {
-            radius: kind === "rect" ? 28 : 0,
+          shapeEl(kind, page.width / 2 - 180, page.height / 2 - 180, 360, 360, "#1c1f24", {
+            radius: kind === "rect" ? 24 : 0,
           }),
         );
       }
@@ -659,11 +649,9 @@ function onAction(event: Event, node: HTMLElement): void {
   }
   if (action === "use-icon") {
     createWithElement(() => {
-      const el = baseElement("icon", 0, 0, 240, 240);
-      el.src = iconDataUri(id, "#6C5CE7");
+      const el = baseElement("icon", 840, 420, 240, 240);
+      el.src = iconDataUri(id, "#111214");
       el.name = id;
-      el.x = 840;
-      el.y = 420;
       store.addElement(el);
     });
     return;
@@ -672,7 +660,7 @@ function onAction(event: Event, node: HTMLElement): void {
     const palette = PALETTES.find((p) => p.id === id);
     if (!palette) return;
     store.updateSettings({ brand: { ...store.state.settings.brand, palette: palette.colors } });
-    store.toast(`Paleta ${palette.name} aplicada à sua marca.`, "success");
+    store.toast(`Paleta ${palette.name} aplicada à marca.`, "success");
     return;
   }
   if (action === "use-photo") {
@@ -686,9 +674,7 @@ function onAction(event: Event, node: HTMLElement): void {
       el.name = photo.description.slice(0, 30);
       store.addElement(el);
     });
-    if (photo.provider === "unsplash") {
-      store.toast(`Foto de ${photo.author} — mantenha o crédito ao publicar.`, "info");
-    }
+    if (photo.provider === "unsplash") store.toast(`Foto de ${photo.author} — mantenha o crédito ao publicar.`, "info");
     return;
   }
   if (action === "photo-tag") {
@@ -701,11 +687,16 @@ function onAction(event: Event, node: HTMLElement): void {
     return;
   }
   if (action === "save-ai") {
-    store.toast("Configuração de IA salva no seu cofre local.", "success");
+    store.toast("Configuração de IA salva neste computador.", "success");
     return;
   }
   if (action === "test-ai") {
-    void testAi();
+    const out = document.getElementById("ai-test-result");
+    if (out) out.textContent = "Testando…";
+    void testAiConnection().then((result) => {
+      const node2 = document.getElementById("ai-test-result");
+      if (node2) node2.textContent = result.message;
+    });
     return;
   }
   if (action === "save-unsplash") {
@@ -727,28 +718,4 @@ function onAction(event: Event, node: HTMLElement): void {
   }
 }
 
-async function testAi(): Promise<void> {
-  const { aiChat } = await import("../bridge");
-  const s = store.state.settings;
-  store.toast("Falando com o provedor…", "info");
-  try {
-    const result = await aiChat({
-      provider: s.provider,
-      apiKey: s.apiKey,
-      model: s.model,
-      baseUrl: s.baseUrl,
-      messages: [{ role: "user", content: "Responda apenas: ok" }],
-      maxTokens: 20,
-    });
-    store.toast(`Conexão OK (${result.model || s.provider}) em ${Math.round(result.ms)} ms.`, "success");
-  } catch (error) {
-    store.toast(`Falhou: ${(error as Error).message}`, "error");
-  }
-}
-
-/** Miniatura usada em "elementos" quando não há foto. */
-export function samplePhotoTile(color: string): string {
-  return placeholderImage("Krevo", color, "#00D4B8", 320, 200);
-}
-
-export { gradient, uid };
+export { gradient, kMark };

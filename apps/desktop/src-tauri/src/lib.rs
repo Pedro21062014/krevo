@@ -49,11 +49,35 @@ struct ProviderInfo {
     model: &'static str,
     endpoint: &'static str,
     needs_key: bool,
+    label: &'static str,
+}
+
+/// Lê o "Retry after Ns" que o Pollinations devolve no plano grátis.
+fn free_limit_wait_ms(payload: &serde_json::Value) -> u64 {
+    let message = payload
+        .get("error")
+        .and_then(|e| e.get("message"))
+        .and_then(|m| m.as_str())
+        .unwrap_or_default()
+        .to_lowercase();
+    let mut seconds: u64 = 10;
+    if let Some(pos) = message.find("retry after") {
+        let digits: String = message[pos + "retry after".len()..]
+            .chars()
+            .skip_while(|c| !c.is_ascii_digit())
+            .take_while(|c| c.is_ascii_digit())
+            .collect();
+        if let Ok(parsed) = digits.parse::<u64>() {
+            seconds = parsed.clamp(1, 45);
+        }
+    }
+    seconds * 1000 + 1200
 }
 
 #[tauri::command]
 fn app_info() -> AppInfo {
     let providers = [
+        Provider::Pollinations,
         Provider::OpenAi,
         Provider::Anthropic,
         Provider::Gemini,
@@ -70,6 +94,7 @@ fn app_info() -> AppInfo {
         model: p.default_model(),
         endpoint: p.default_endpoint(),
         needs_key: p.needs_key(),
+        label: p.label(),
     })
     .collect();
 
@@ -144,25 +169,67 @@ async fn ai_chat(args: AiChatArgs) -> Result<AiChatResult, String> {
     }
 
     let started = std::time::Instant::now();
-    let response = builder.json(&request.body).send().await.map_err(|e| {
-        format!(
-            "Não consegui falar com o provedor ({e}). Verifique sua internet, a URL base ou se o Ollama está rodando."
-        )
-    })?;
-    let status = response.status();
-    let payload: serde_json::Value = response
-        .json()
-        .await
-        .map_err(|e| format!("Resposta inválida do provedor: {e}"))?;
+
+    // Alguns provedores gratuitos devolvem 429/5xx esporádicos e o Pollinations
+    // retorna 402 enquanto o intervalo do plano grátis não passa: nos dois casos
+    // esperamos e tentamos de novo antes de desistir.
+    let mut attempt = 0;
+    let (status, payload) = loop {
+        attempt += 1;
+        let response = match builder.try_clone().unwrap().json(&request.body).send().await {
+            Ok(response) => response,
+            Err(error) if attempt < 3 => {
+                eprintln!("tentativa {attempt} falhou: {error}");
+                tokio::time::sleep(std::time::Duration::from_millis(700 * attempt as u64)).await;
+                continue;
+            }
+            Err(error) => {
+                return Err(format!(
+                    "Não consegui falar com o provedor ({error}). Verifique a conexão, a URL base ou se o Ollama está rodando."
+                ))
+            }
+        };
+
+        let status = response.status();
+        let payload: serde_json::Value = response.json().await.unwrap_or(serde_json::Value::Null);
+        let free_limit = status.as_u16() == 402;
+        let transient = status.as_u16() == 429 || status.is_server_error();
+        if (free_limit || transient) && attempt < 3 {
+            let wait = if free_limit {
+                free_limit_wait_ms(&payload)
+            } else {
+                900 * attempt as u64
+            };
+            tokio::time::sleep(std::time::Duration::from_millis(wait)).await;
+            continue;
+        }
+        break (status, payload);
+    };
 
     if !status.is_success() {
         let message = payload
             .get("error")
             .and_then(|e| e.get("message"))
             .and_then(|m| m.as_str())
+            .or_else(|| payload.get("error").and_then(|e| e.as_str()))
             .map(|s| s.to_string())
             .unwrap_or_else(|| format!("HTTP {status}"));
-        return Err(format!("O provedor recusou o pedido: {message}"));
+        let code = status.as_u16();
+        let upper = message.to_uppercase();
+        let friendly = if code == 402 || upper.contains("FREE LIMIT") || upper.contains("FREE_LIMIT") {
+            "O plano grátis do Pollinations libera 1 resposta a cada 30 segundos. Aguarde um pouco e gere de novo — ou cole a sua chave em Ajustes → Agente de IA para uso sem limite.".to_string()
+        } else if code == 429 {
+            "O provedor está limitando as requisições. Espere alguns segundos, troque de provedor ou use a sua própria chave.".to_string()
+        } else if code == 401 || code == 403 {
+            "A chave foi recusada. Confira a chave, o modelo e a URL base em Ajustes → Agente de IA.".to_string()
+        } else if code == 404 {
+            "Modelo ou endpoint não encontrado. Confira o nome do modelo em Ajustes → Agente de IA.".to_string()
+        } else if status.is_server_error() {
+            format!("O provedor está instável (HTTP {code}). Tente de novo em instantes ou troque de provedor.")
+        } else {
+            format!("O provedor recusou o pedido: {message}")
+        };
+        return Err(friendly);
     }
 
     let text = ai::parse_chat_response(provider, &payload).map_err(|e| e.to_string())?;
@@ -172,6 +239,48 @@ async fn ai_chat(args: AiChatArgs) -> Result<AiChatResult, String> {
         model,
         ms: started.elapsed().as_millis(),
     })
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct AiTestResult {
+    ok: bool,
+    message: String,
+    model: String,
+    ms: u128,
+}
+
+/// Ping curto no provedor: valida chave, URL e modelo em ~1 segundo.
+#[tauri::command]
+async fn ai_test(args: AiChatArgs) -> AiTestResult {
+    let started = std::time::Instant::now();
+    let probe = AiChatArgs {
+        messages: vec![ChatMessage::user(
+            "Responda apenas com a palavra: ok",
+        )],
+        max_tokens: 12,
+        temperature: 0.1,
+        json_mode: false,
+        ..args
+    };
+    match ai_chat(probe).await {
+        Ok(result) => AiTestResult {
+            ok: true,
+            message: format!(
+                "Conexão funcionando ({}) em {} ms.",
+                if result.model.is_empty() { result.provider.clone() } else { result.model.clone() },
+                result.ms
+            ),
+            model: result.model,
+            ms: started.elapsed().as_millis(),
+        },
+        Err(message) => AiTestResult {
+            ok: false,
+            message,
+            model: String::new(),
+            ms: started.elapsed().as_millis(),
+        },
+    }
 }
 
 #[tauri::command]
@@ -375,6 +484,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             app_info,
             ai_chat,
+            ai_test,
             design_system_prompt,
             design_demo_plan,
             design_parse_plan,

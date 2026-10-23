@@ -17,13 +17,16 @@ let editor: EditorView | null = null;
 
 function render(): void {
   const state = store.state;
-  document.documentElement.dataset.theme = state.settings.theme;
+  const root = document.documentElement;
+  root.dataset.theme = state.settings.theme;
+  root.dataset.screen = state.screen;
 
   if (state.screen === "editor") {
     if (!editor) {
       editor = new EditorView(app as HTMLElement);
       editor.mount();
     }
+    document.title = `${state.project.name} · Krevo`;
     return;
   }
 
@@ -31,6 +34,7 @@ function render(): void {
     editor.destroy();
     editor = null;
   }
+  document.title = "Krevo — estúdio de design com IA";
   mountHome(app as HTMLElement);
 }
 
@@ -45,9 +49,15 @@ window.setTimeout(() => {
 // Atalhos globais
 window.addEventListener("keydown", (event) => {
   const mod = event.metaKey || event.ctrlKey;
-  if (mod && event.key.toLowerCase() === "n") {
+  if (!mod) return;
+  const key = event.key.toLowerCase();
+  if (key === "n") {
     event.preventDefault();
     store.createProject("Novo projeto", 1920, 1080);
+  }
+  if (key === "," && store.state.screen === "home") {
+    event.preventDefault();
+    store.patch({ homeTab: "ajustes" });
   }
 });
 

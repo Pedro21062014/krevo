@@ -42,6 +42,8 @@ export class EditorView {
   private pageEl: HTMLElement | null = null;
   private drag: DragState | null = null;
   private spaceDown = false;
+  private lastClick: { id: string; at: number } | null = null;
+  private lastAgentKey = "";
   private unsubscribe: (() => void) | null = null;
   private bound = false;
   private wantFit = true;
@@ -56,33 +58,56 @@ export class EditorView {
   mount(): void {
     this.root.innerHTML = `
       <div class="editor">
-        <aside class="panel left">
-          <div class="panel-head"><span>${icons.layers} Páginas</span>
-            <button class="btn small icon" data-edit="add-page" title="Nova página">${icons.plus}</button>
-          </div>
-          <div class="panel-body" id="pages-list" style="gap:8px"></div>
-          <div class="panel-head" style="border-top:1px solid var(--line)"><span>${icons.elements} Camadas</span></div>
-          <div class="panel-body" id="layers-list" style="flex:1"></div>
+        <aside class="toolrail">
+          <button class="tool back" data-edit="home" title="Voltar ao início (Esc)">${icons.back}</button>
+          <button class="tool ${store.state.tool === "select" ? "active" : ""}" data-tool="select" title="Selecionar (V)">${icons.cursor}</button>
+          <button class="tool ${store.state.tool === "hand" ? "active" : ""}" data-tool="hand" title="Mover tela (H / espaço)">${icons.hand}</button>
+          <button class="tool ${store.state.tool === "text" ? "active" : ""}" data-tool="text" title="Texto (T)">${icons.text}</button>
+          <button class="tool ${store.state.tool === "rect" ? "active" : ""}" data-tool="rect" title="Retângulo (R)">${icons.square}</button>
+          <button class="tool ${store.state.tool === "ellipse" ? "active" : ""}" data-tool="ellipse" title="Elipse (O)">${icons.circle}</button>
+          <button class="tool" data-edit="add-image" title="Inserir imagem">${icons.image}</button>
+          <button class="tool" data-edit="add-video" title="Inserir vídeo">${icons.video}</button>
+          <span class="spacer"></span>
+          <button class="tool" data-edit="undo" title="Desfazer (⌘Z)">${icons.undo}</button>
+          <button class="tool" data-edit="redo" title="Refazer (⇧⌘Z)">${icons.redo}</button>
+          <button class="tool" data-edit="export-pdf" title="Exportar PDF (⇧⌘E)">${icons.pdf}</button>
         </aside>
 
-        <div style="display:flex;flex-direction:column;min-width:0;min-height:0">
-          <div class="topbar">
-            <button class="btn small ghost icon" data-edit="home" title="Voltar ao início (Esc)">${icons.back}</button>
-            <input class="doc-name" id="doc-name" value="${esc(store.state.project.name)}" />
-            <span class="pill" id="format-pill"></span>
-            <div class="spacer"></div>
-            <div class="row" style="gap:4px">
-              <button class="btn small icon ghost" data-edit="undo" title="Desfazer (⌘Z)">${icons.undo}</button>
-              <button class="btn small icon ghost" data-edit="redo" title="Refazer (⇧⌘Z)">${icons.redo}</button>
+        <aside class="panel left">
+          <div class="panel-head">
+            <span>Páginas</span>
+            <div class="head-actions">
+              <button class="btn small icon ghost" data-edit="add-page" title="Nova página">${icons.plus}</button>
             </div>
+          </div>
+          <div class="panel-body tight" id="pages-list"></div>
+          <div class="panel-head" style="border-top:1px solid var(--line)">
+            <span>Camadas</span>
+            <div class="head-actions">
+              <button class="btn small icon ghost" data-edit="add-text" title="Adicionar texto">${icons.text}</button>
+            </div>
+          </div>
+          <div class="panel-body tight" id="layers-list" style="flex:1"></div>
+        </aside>
+
+        <div class="workspace">
+          <div class="topbar">
+            <div class="crumbs">
+              <button class="btn small icon ghost" data-edit="home" title="Projetos">${icons.home}</button>
+              <span>/</span>
+              <input class="doc-name" id="doc-name" value="${esc(store.state.project.name)}" spellcheck="false" />
+              <span class="pill" id="format-pill"></span>
+            </div>
+            <div class="spacer"></div>
             <div class="zoom-pill">
               <button data-edit="zoom-out" title="Menos zoom">${icons.zoomOut}</button>
               <span id="zoom-label">—</span>
               <button data-edit="zoom-in" title="Mais zoom">${icons.zoomIn}</button>
               <button data-edit="zoom-fit" title="Ajustar à tela">${icons.fit}</button>
             </div>
+            <button class="btn small ghost" data-edit="toggle-grid" title="Mostrar grade">${icons.grid}</button>
             <button class="btn small" data-edit="save" title="Salvar (⌘S)">${icons.download} Salvar</button>
-            <button class="btn primary small" data-edit="export-pdf" title="Exportar PDF (⌘⇧E)">${icons.pdf} Exportar PDF</button>
+            <button class="btn primary small" data-edit="export-pdf" title="Exportar PDF (⇧⌘E)">${icons.pdf} PDF</button>
           </div>
 
           <div class="canvas-area">
@@ -95,11 +120,11 @@ export class EditorView {
 
         <aside class="panel right">
           <div class="panel-tabs">
-            <button class="panel-tab active" data-tab-panel="inspector">Propriedades</button>
-            <button class="panel-tab" data-tab-panel="agent">Agente</button>
+            <button class="panel-tab ${store.state.rightPanel === "inspector" ? "active" : ""}" data-tab-panel="inspector">Propriedades</button>
+            <button class="panel-tab ${store.state.rightPanel === "agent" ? "active" : ""}" data-tab-panel="agent">${icons.sparkles} Agente</button>
           </div>
           <div class="panel-body" id="inspector-host" style="flex:1"></div>
-          <div id="agent-host" class="hidden" style="flex:1;min-height:0"></div>
+          <div id="agent-host" class="${store.state.rightPanel === "agent" ? "" : "hidden"}" style="flex:1;min-height:0"></div>
         </aside>
       </div>
       <div class="toasts">
@@ -222,6 +247,10 @@ export class EditorView {
       node.addEventListener("click", () => this.onToolbar(node.dataset.edit ?? ""));
     });
 
+    this.root.querySelectorAll<HTMLElement>("[data-tool]").forEach((node) => {
+      node.addEventListener("click", () => store.setTool((node.dataset.tool ?? "select") as never));
+    });
+
     this.root.querySelectorAll<HTMLElement>("[data-tab-panel]").forEach((node) => {
       node.addEventListener("click", () => {
         const panel = node.dataset.tabPanel;
@@ -253,6 +282,16 @@ export class EditorView {
     });
 
     this.stageWrap?.addEventListener("pointerdown", (event) => this.onStagePointerDown(event));
+    this.stageWrap?.addEventListener("dblclick", (event) => {
+      const target = event.target as HTMLElement;
+      const node = target.closest<HTMLElement>(".kf-el");
+      if (!node) return;
+      const el = store.page.elements.find((e) => e.id === node.dataset.id);
+      if (!el || el.kind !== "text" || el.locked) return;
+      event.preventDefault();
+      event.stopPropagation();
+      this.startTextEdit(node, el);
+    });
     window.addEventListener("pointermove", (event) => this.onPointerMove(event));
     window.addEventListener("pointerup", () => this.onPointerUp());
 
@@ -329,6 +368,15 @@ export class EditorView {
         break;
       case "add-page":
         store.addPage();
+        break;
+      case "add-image":
+        this.pickFile("image/*");
+        break;
+      case "add-video":
+        this.pickFile("video/*");
+        break;
+      case "toggle-grid":
+        store.patch({ showGrid: !store.state.showGrid });
         break;
       case "save":
         await this.save();
@@ -464,6 +512,23 @@ export class EditorView {
       const id = elementNode.dataset.id ?? "";
       const el = store.page.elements.find((e) => e.id === id);
       if (!el || el.locked) return;
+
+      // Duplo clique em texto abre a edição no lugar (o DOM é recriado a cada
+      // clique, então medimos o intervalo aqui em vez de confiar no evento).
+      const now = performance.now();
+      if (
+        el.kind === "text" &&
+        this.lastClick &&
+        this.lastClick.id === id &&
+        now - this.lastClick.at < 450
+      ) {
+        this.lastClick = null;
+        event.preventDefault();
+        // espera o mouseup/click terminar antes de roubar o foco
+        window.setTimeout(() => this.startTextEdit(elementNode, el), 0);
+        return;
+      }
+      this.lastClick = { id, at: now };
       const already = store.state.selection.includes(id);
       if ((event as MouseEvent).shiftKey) store.toggleSelect(id);
       else if (!already) store.select([id]);
@@ -736,6 +801,13 @@ export class EditorView {
 
   private paintStage(): void {
     if (!this.stageInner) return;
+    // Enquanto o usuário edita um texto no canvas, não recriamos o DOM.
+    if (store.state.editingId) {
+      this.stageInner.style.transform = `translate(calc(-50% + ${store.state.pan.x}px), calc(-50% + ${
+        store.state.pan.y
+      }px)) scale(${store.state.zoom || 1})`;
+      return;
+    }
     const state = store.state;
     if (!state.zoom) {
       state.zoom = this.fitZoom();
@@ -749,17 +821,12 @@ export class EditorView {
     pageEl.style.width = `${page.width}px`;
     pageEl.style.height = `${page.height}px`;
     pageEl.style.background = page.background ? toCss(page.background as never) : "#FFFFFF";
+    pageEl.classList.toggle("grid-on", store.state.showGrid);
 
     // redesenha os elementos
     pageEl.innerHTML = "";
     for (const el of page.elements) {
-      const node = renderElement(el, true);
-      node.addEventListener("dblclick", (event) => {
-        if (el.kind !== "text") return;
-        event.stopPropagation();
-        this.startTextEdit(node, el);
-      });
-      pageEl.appendChild(node);
+      pageEl.appendChild(renderElement(el, true));
     }
 
     // overlay de seleção
@@ -790,68 +857,120 @@ export class EditorView {
     if (label) label.textContent = `${Math.round(zoom * 100)}%`;
   }
 
-  private startTextEdit(node: HTMLElement, el: Element): void {
+  private startTextEdit(passedNode: HTMLElement, el: Element): void {
     if (!el.text) return;
+
+    // Seleciona primeiro (isso repinta o canvas) e só então trava a edição,
+    // para o paintStage não recriar o nó embaixo do cursor.
     store.patch({ editingId: el.id }, false);
-    node.setAttribute("contenteditable", "true");
-    node.focus();
+    store.select([el.id]);
+    store.patch({ editingId: el.id }, false);
+
+    const node =
+      this.stageInner?.querySelector<HTMLElement>(`.kf-el[data-id="${el.id}"]`) ?? passedNode;
+    if (!node.isConnected) return;
+
+    // Trabalhamos sobre o <span> interno, que é quem carrega o texto.
+    const span = node.querySelector<HTMLElement>("span") ?? node;
+    node.classList.add("editing");
+    span.setAttribute("contenteditable", "true");
+    span.style.userSelect = "text";
+    span.focus();
+
     const range = document.createRange();
-    range.selectNodeContents(node);
+    range.selectNodeContents(span);
     const selection = window.getSelection();
     selection?.removeAllRanges();
     selection?.addRange(range);
-    const finish = (): void => {
-      node.removeAttribute("contenteditable");
-      const text = node.innerText.replace(/\u00a0/g, " ");
-      if (el.text && text !== el.text.content) {
-        store.updateElement(el.id, { text: { ...el.text, content: text } });
+
+    const startedAt = performance.now();
+    let done = false;
+    const finish = (commit: boolean): void => {
+      if (done) return;
+      done = true;
+      const raw = span.innerText.replace(/\u00a0/g, " ").replace(/\n$/, "");
+      span.removeAttribute("contenteditable");
+      span.style.userSelect = "";
+      node.classList.remove("editing");
+      span.removeEventListener("blur", onBlur);
+      span.removeEventListener("keydown", onKey);
+      store.patch({ editingId: null }, false);
+      const current = el.text?.content ?? "";
+      if (commit && raw !== current) {
+        store.updateElement(el.id, { text: { ...(el.text as NonNullable<typeof el.text>), content: raw } });
+        store.toast("Texto atualizado.", "success");
+      } else {
+        store.emit();
       }
-      node.removeEventListener("blur", finish);
     };
-    node.addEventListener("blur", finish);
+    const onBlur = (): void => {
+      // Um blur imediato (no mesmo clique) não deve encerrar a edição.
+      if (performance.now() - startedAt < 250) {
+        window.setTimeout(() => {
+          if (document.activeElement !== span) span.focus();
+        }, 0);
+        return;
+      }
+      finish(true);
+    };
+    const onKey = (event: KeyboardEvent): void => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        finish(false);
+      }
+      if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+        event.preventDefault();
+        finish(true);
+      }
+    };
+    span.addEventListener("blur", onBlur);
+    span.addEventListener("keydown", onKey);
   }
 
   private paintPages(): void {
     const host = this.root.querySelector("#pages-list");
-    if (!host) return;
-    host.innerHTML = store.state.project.pages
-      .map((page, index) => {
-        const thumb = renderThumb(page, 92);
-        const holder = document.createElement("div");
-        holder.appendChild(thumb);
-        return `
-        <div class="page-chip ${index === store.state.pageIndex ? "active" : ""}" data-page-index="${index}" style="width:100%">
-          ${holder.innerHTML}
-          <span class="num">${index + 1}</span>
-          <div class="row" style="position:absolute;right:2px;top:2px;gap:0">
-            <button class="mini" data-page-action="duplicate" data-page-index="${index}" title="Duplicar" style="width:17px;height:17px;border-radius:4px;background:rgba(0,0,0,.5);color:#fff;font-size:9px">⧉</button>
-            <button class="mini" data-page-action="delete" data-page-index="${index}" title="Excluir" style="width:17px;height:17px;border-radius:4px;background:rgba(0,0,0,.5);color:#fff;font-size:9px">✕</button>
-          </div>
+    if (host) {
+      host.innerHTML = store.state.project.pages
+        .map((page, index) => {
+          const holder = document.createElement("div");
+          holder.appendChild(renderThumb(page, 56));
+          return `
+        <div class="page-item ${index === store.state.pageIndex ? "active" : ""}" data-page-index="${index}">
+          <span class="thumb">${holder.innerHTML}</span>
+          <span class="label">
+            <b>${esc(page.name)}</b>
+            <span>${Math.round(page.width)}×${Math.round(page.height)}</span>
+          </span>
+          <span class="acts">
+            <button data-page-action="duplicate" data-page-index="${index}" title="Duplicar">${icons.copy}</button>
+            <button data-page-action="delete" data-page-index="${index}" title="Excluir">${icons.trash}</button>
+          </span>
         </div>`;
-      })
-      .join("");
-    const strip = this.root.querySelector("#page-strip");
-    if (strip) {
-      strip.innerHTML = "";
-      store.state.project.pages.forEach((page, index) => {
-        const chip = document.createElement("button");
-        chip.className = `page-chip ${index === store.state.pageIndex ? "active" : ""}`;
-        const thumb = renderThumb(page, 110);
-        chip.appendChild(thumb);
-        const num = document.createElement("span");
-        num.className = "num";
-        num.textContent = String(index + 1);
-        chip.appendChild(num);
-        chip.addEventListener("click", () => store.setPageIndex(index));
-        strip.appendChild(chip);
-      });
-      const add = document.createElement("button");
-      add.className = "page-add";
-      add.innerHTML = icons.plus;
-      add.title = "Nova página";
-      add.addEventListener("click", () => store.addPage());
-      strip.appendChild(add);
+        })
+        .join("");
     }
+
+    const strip = this.root.querySelector("#page-strip");
+    if (!strip) return;
+    strip.innerHTML = "";
+    store.state.project.pages.forEach((page, index) => {
+      const chip = document.createElement("button");
+      chip.className = `page-chip ${index === store.state.pageIndex ? "active" : ""}`;
+      chip.title = page.name;
+      chip.appendChild(renderThumb(page, 52));
+      const num = document.createElement("span");
+      num.className = "num";
+      num.textContent = String(index + 1);
+      chip.appendChild(num);
+      chip.addEventListener("click", () => store.setPageIndex(index));
+      strip.appendChild(chip);
+    });
+    const add = document.createElement("button");
+    add.className = "page-add";
+    add.innerHTML = icons.plus;
+    add.title = "Nova página";
+    add.addEventListener("click", () => store.addPage());
+    strip.appendChild(add);
   }
 
   private paintLayers(): void {
@@ -880,11 +999,30 @@ export class EditorView {
   private paintAgentIfIdle(): void {
     const host = this.root.querySelector<HTMLElement>("#agent-host");
     if (!host) return;
-    const active = document.activeElement;
-    const typingInAgent = active && host.contains(active);
-    if (typingInAgent && !store.state.agentBusy) return;
+
+    // Só ignora a repintura quando nada mudou — assim a conversa continua
+    // aparecendo mesmo com o cursor dentro da caixa de texto.
+    const state = store.state;
+    const key = `${state.chat.length}:${state.agentBusy ? 1 : 0}:${state.agentModel}:${state.rightPanel}`;
+    if (key === this.lastAgentKey) return;
+    this.lastAgentKey = key;
+
+    const textarea = host.querySelector<HTMLTextAreaElement>("#agent-text");
+    const draft = textarea?.value ?? "";
+    const focused = document.activeElement === textarea;
+    const caret = textarea?.selectionStart ?? 0;
+
     host.innerHTML = agentPanelHtml();
     bindAgentPanel(this.root);
+
+    if (focused) {
+      const next = host.querySelector<HTMLTextAreaElement>("#agent-text");
+      if (next) {
+        next.value = draft;
+        next.focus();
+        next.setSelectionRange(caret, caret);
+      }
+    }
   }
 
   /* ---------------- inspetor ---------------- */
@@ -1256,6 +1394,12 @@ export class EditorView {
 
   private onInspectorInput(event: Event): void {
     const target = event.target as HTMLInputElement;
+    // O conteúdo do texto atualiza ao vivo no canvas enquanto se digita.
+    if (target.dataset.text === "content") {
+      const el = store.selected[0];
+      if (el?.text) store.updateElement(el.id, { text: { ...el.text, content: target.value } }, false);
+      return;
+    }
     if (target.type !== "color") return;
     if (target.dataset.color) this.applyColor(target.dataset.color, target.value, false);
   }

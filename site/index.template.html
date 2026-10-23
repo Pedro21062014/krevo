@@ -8,15 +8,15 @@
 <meta property="og:title" content="Krevo — Crie tudo em um só lugar" />
 <meta property="og:description" content="PDF, apresentações, imagens, vídeo e muito mais — com um agente de IA ao lado e a sua própria chave de API." />
 <meta property="og:type" content="website" />
-<meta name="theme-color" content="#07080d" />
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%236C5CE7'/%3E%3Cpath d='M36 22v56M76 24L40 50l36 26' stroke='white' stroke-width='9' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+<meta name="theme-color" content="#0a0b0d" />
+<link rel="icon" href="{{FAVICON}}" />
 <style>
   :root{
-    --bg:#07080d; --bg2:#0b0d14; --surface:#0f111a; --surface2:#151822;
-    --line:rgba(255,255,255,.09); --line2:rgba(255,255,255,.16);
-    --text:#edeef5; --muted:#9096ac; --muted2:#6a7089;
-    --accent:#6c5ce7; --accent2:#00d4b8; --accent3:#ff6b35;
-    --radius:16px; --max:1180px;
+    --bg:#0a0b0d; --bg2:#0d0f11; --surface:#111316; --surface2:#15181b;
+    --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.15);
+    --text:#f1f1ef; --muted:#8b8e92; --muted2:#666b70;
+    --accent:#34d39f; --accent2:#34d39f; --accent3:#e8e8e4;
+    --radius:14px; --max:1180px;
     --font:"Inter","Segoe UI",system-ui,-apple-system,sans-serif;
     --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
   }
@@ -32,11 +32,12 @@
   img{max-width:100%;display:block}
   .wrap{max-width:var(--max);margin:0 auto;padding:0 24px}
   .eyebrow{
-    display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:650;
-    letter-spacing:.12em;text-transform:uppercase;color:#b3a9ff;
-    background:rgba(108,92,231,.12);border:1px solid rgba(108,92,231,.3);
-    padding:6px 12px;border-radius:999px;
+    display:inline-flex;align-items:center;gap:8px;font-size:11.5px;font-weight:600;
+    letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+    background:var(--surface);border:1px solid var(--line2);
+    padding:5px 11px;border-radius:999px;
   }
+  .eyebrow::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--accent)}
   .btn{
     display:inline-flex;align-items:center;justify-content:center;gap:9px;
     height:46px;padding:0 22px;border-radius:12px;font-weight:620;font-size:15px;
@@ -46,10 +47,10 @@
   }
   .btn:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.3)}
   .btn.primary{
-    background:linear-gradient(135deg,#6c5ce7,#8b7bff 55%,#00d4b8);
-    border:none;color:#fff;box-shadow:0 16px 40px rgba(108,92,231,.36);
+    background:var(--text);border:1px solid transparent;color:#0a0b0d;
+    box-shadow:0 10px 30px rgba(0,0,0,.45);
   }
-  .btn.primary:hover{filter:brightness(1.08)}
+  .btn.primary:hover{background:#fff;transform:translateY(-1px)}
   .btn.ghost{background:transparent}
   .btn svg{width:18px;height:18px}
 
@@ -58,8 +59,10 @@
   header.scrolled{border-color:var(--line);background:rgba(7,8,13,.9)}
   nav{display:flex;align-items:center;gap:28px;height:70px}
   .brand{display:flex;align-items:center;gap:11px;font-weight:780;font-size:19px;letter-spacing:-.02em}
-  .mark{width:34px;height:34px;border-radius:10px;background:linear-gradient(140deg,#6c5ce7,#00d4b8);display:grid;place-items:center;box-shadow:0 8px 22px rgba(108,92,231,.45)}
-  .mark svg{width:18px;height:18px}
+  .brand img{height:22px;width:auto;display:block}
+  .mark{width:30px;height:30px;border-radius:9px;background:var(--text);display:grid;place-items:center;flex-shrink:0}
+  .mark img{width:17px;height:17px;object-fit:contain;filter:invert(1)}
+  .foot .mark{background:var(--surface2);border:1px solid var(--line)}
   nav .links{display:flex;gap:26px;margin-left:18px;font-size:14.5px;color:var(--muted)}
   nav .links a:hover{color:var(--text)}
   nav .spacer{flex:1}
@@ -71,15 +74,15 @@
   /* ---------- hero ---------- */
   .hero{position:relative;padding:84px 0 30px;overflow:hidden}
   .glow{position:absolute;border-radius:50%;filter:blur(90px);opacity:.5;pointer-events:none}
-  .glow.a{width:620px;height:620px;background:radial-gradient(circle,#6c5ce7,transparent 65%);top:-260px;left:-120px}
-  .glow.b{width:560px;height:560px;background:radial-gradient(circle,#00d4b8,transparent 65%);top:-180px;right:-140px;opacity:.35}
+  .glow.a{width:620px;height:620px;background:radial-gradient(circle,#1b2b26,transparent 68%);top:-260px;left:-120px;opacity:.75}
+  .glow.b{width:520px;height:520px;background:radial-gradient(circle,#34d39f,transparent 70%);top:-220px;right:-160px;opacity:.12}
   .hero h1{font-size:clamp(40px,6.4vw,76px);margin:22px 0 20px;max-width:15ch}
-  .hero h1 .grad{background:linear-gradient(100deg,#a99bff,#6c5ce7 40%,#00d4b8);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero h1 .grad{color:var(--accent)}
   .hero .lede{font-size:clamp(16px,1.6vw,19.5px);color:var(--muted);max-width:62ch}
   .hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin:32px 0 18px}
   .meta-row{display:flex;gap:22px;flex-wrap:wrap;color:var(--muted2);font-size:13px}
   .meta-row span{display:inline-flex;align-items:center;gap:7px}
-  .dot{width:7px;height:7px;border-radius:50%;background:var(--accent2);box-shadow:0 0 0 3px rgba(0,212,184,.16)}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px rgba(52,211,159,.14)}
 
   /* screenshots */
   .shot{
@@ -102,14 +105,14 @@
   .g3{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
   .g4{grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
   .card{
-    background:linear-gradient(180deg,var(--surface),rgba(15,17,26,.6));
+    background:var(--surface);
     border:1px solid var(--line);border-radius:var(--radius);padding:24px;
     transition:transform .2s ease,border-color .2s ease,background .2s ease;
   }
-  .card:hover{transform:translateY(-4px);border-color:rgba(108,92,231,.45)}
+  .card:hover{transform:translateY(-2px);border-color:var(--line2)}
   .card .ico{
-    width:42px;height:42px;border-radius:12px;display:grid;place-items:center;margin-bottom:16px;
-    background:rgba(108,92,231,.14);border:1px solid rgba(108,92,231,.3);color:#b3a9ff;
+    width:38px;height:38px;border-radius:10px;display:grid;place-items:center;margin-bottom:16px;
+    background:var(--surface2);border:1px solid var(--line2);color:var(--muted);
   }
   .card .ico svg{width:21px;height:21px}
   .card h3{font-size:17px;margin-bottom:8px}
@@ -129,7 +132,7 @@
   .codebox .top i{width:9px;height:9px;border-radius:50%;background:#333845}
   .codebox .top span{margin-left:8px;color:var(--muted2);font-size:11px}
   .codebox pre{margin:0;padding:16px;overflow-x:auto;color:#c9d1e6}
-  .k{color:#b3a9ff}.s{color:#7ee7c9}.n{color:#ffc857}.c{color:#5b637b}
+  .k{color:#9fe8cd}.s{color:#e8e8e4}.n{color:#34d39f}.c{color:#5c6267}
 
   /* formats */
   .fmt{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
@@ -142,10 +145,10 @@
 
   /* steps */
   .steps{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));counter-reset:s}
-  .step{position:relative;padding:26px;border-radius:var(--radius);border:1px solid var(--line);background:linear-gradient(180deg,var(--surface),transparent)}
+  .step{position:relative;padding:26px;border-radius:var(--radius);border:1px solid var(--line);background:var(--surface)}
   .step::before{
     counter-increment:s;content:counter(s,decimal-leading-zero);
-    font-family:var(--mono);font-size:12px;color:#b3a9ff;letter-spacing:.1em;
+    font-family:var(--mono);font-size:12px;color:var(--accent);letter-spacing:.1em;
     display:block;margin-bottom:12px;
   }
   .step h3{font-size:16.5px;margin-bottom:8px}
@@ -154,7 +157,7 @@
   /* downloads */
   .dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}
   .dl-card{border:1px solid var(--line);border-radius:var(--radius);padding:24px;background:var(--surface);transition:border-color .2s,transform .2s}
-  .dl-card:hover{border-color:rgba(0,212,184,.45);transform:translateY(-3px)}
+  .dl-card:hover{border-color:var(--line2);transform:translateY(-2px)}
   .dl-card .os{display:flex;align-items:center;gap:10px;font-weight:700;margin-bottom:6px}
   .dl-card .os svg{width:20px;height:20px}
   .dl-card small{color:var(--muted2);font-family:var(--mono);font-size:11.5px;display:block;margin-bottom:16px}
@@ -169,7 +172,7 @@
 
   /* faq */
   details{border:1px solid var(--line);border-radius:12px;padding:18px 20px;background:var(--surface);margin-bottom:10px}
-  details[open]{border-color:rgba(108,92,231,.4)}
+  details[open]{border-color:var(--line2)}
   summary{cursor:pointer;font-weight:640;font-size:15.5px;list-style:none;display:flex;justify-content:space-between;gap:16px}
   summary::-webkit-details-marker{display:none}
   summary::after{content:"+";color:var(--muted2);font-weight:400;font-size:20px;line-height:1}
@@ -178,9 +181,8 @@
 
   /* cta final */
   .final{
-    border-radius:26px;padding:64px 40px;text-align:center;position:relative;overflow:hidden;
-    background:linear-gradient(140deg,#191a3a,#0d1226 55%,#07211f);
-    border:1px solid var(--line2);
+    border-radius:22px;padding:64px 40px;text-align:center;position:relative;overflow:hidden;
+    background:var(--surface);border:1px solid var(--line2);
   }
   .final h2{font-size:clamp(28px,4vw,46px);margin-bottom:16px}
   .final p{color:var(--muted);max-width:56ch;margin:0 auto 28px}
@@ -201,9 +203,8 @@
 <header id="hdr">
   <div class="wrap">
     <nav>
-      <a class="brand" href="#top">
-        <span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3v18"/><path d="M18 4L7.5 13.5 18 21"/></svg></span>
-        Krevo
+      <a class="brand" href="#top" aria-label="Krevo">
+        <img src="{{LOGO_WORD}}" alt="Krevo" />
       </a>
       <div class="links">
         <a href="#recursos">Recursos</a>
@@ -229,12 +230,12 @@
     <div class="glow a"></div>
     <div class="glow b"></div>
     <div class="wrap">
-      <span class="eyebrow">Novo · versão 0.1 · código aberto</span>
+      <span class="eyebrow">Novo · versão 0.2 · IA grátis sem chave</span>
       <h1>Crie tudo.<br /><span class="grad">Em um só lugar.</span></h1>
       <p class="lede">
-        Krevo é o estúdio de design nativo que edita <b>PDF, apresentações, imagens, vídeo</b> e muito mais
-        — com uma tela inicial leve, templates prontos, banco de fotos e um <b>agente de IA</b> ao lado
-        para criar designs profissionais com a <b>sua própria API</b>.
+        Krevo é o estúdio de design nativo que edita <b>PDF, apresentações, imagens, vídeo</b> e muito mais.
+        A tela inicial abre em menos de um segundo e o <b>agente de IA</b> ao lado já funciona
+        <b>de graça, sem chave</b> — ou com a <b>sua própria API</b>, se preferir.
       </p>
       <div class="hero-actions">
         <a class="btn primary" href="#download">
@@ -247,9 +248,9 @@
         </a>
       </div>
       <div class="meta-row">
-        <span><i class="dot"></i> 100% local: suas chaves ficam na sua máquina</span>
+        <span><i class="dot"></i> IA grátis no primeiro uso, sem cadastro</span>
+        <span>100% local: suas chaves ficam na sua máquina</span>
         <span>PDF vetorial em Rust, sem Chromium</span>
-        <span>Sem cadastro · sem assinatura</span>
       </div>
 
       <div class="shot reveal">
@@ -329,20 +330,22 @@
     <div class="wrap split">
       <div class="reveal">
         <span class="eyebrow">Agente de IA</span>
-        <h2 style="font-size:clamp(28px,3.6vw,42px);margin:16px 0 14px">Seu diretor de arte,<br />com a sua própria API.</h2>
+        <h2 style="font-size:clamp(28px,3.6vw,42px);margin:16px 0 14px">Seu diretor de arte,<br />funcionando de verdade.</h2>
         <p style="color:var(--muted);font-size:16.5px">
-          Cole a sua chave (ou aponte para o Ollama local) e descreva o que precisa. O agente recebe
-          o grid da página, a paleta da marca e o seu briefing — e devolve um <b>plano de design em JSON</b>,
-          não código. O Krevo aplica tudo no canvas e você segue editando.
+          Descreva o que precisa e o agente desenha. Ele recebe o grid da página, a margem segura, a paleta
+          da marca e o seu briefing — e devolve um <b>plano de design em JSON</b>, não código. O Krevo
+          aplica no canvas e você segue editando com mouse e teclado.
         </p>
         <div class="providers">
-          <span class="pill">OpenAI</span><span class="pill">Anthropic</span><span class="pill">Gemini</span>
-          <span class="pill">OpenRouter</span><span class="pill">Groq</span><span class="pill">DeepSeek</span>
-          <span class="pill">Mistral</span><span class="pill">Ollama (local)</span><span class="pill">Endpoint custom</span>
+          <span class="pill">Grátis, sem chave</span><span class="pill">OpenAI</span><span class="pill">Anthropic</span>
+          <span class="pill">Gemini</span><span class="pill">OpenRouter</span><span class="pill">Groq</span>
+          <span class="pill">DeepSeek</span><span class="pill">Mistral</span><span class="pill">Ollama (local)</span>
+          <span class="pill">Endpoint custom</span>
         </div>
         <p style="color:var(--muted2);font-size:13.5px;margin-top:20px">
-          A chave fica no armazenamento local do app e viaja direto do seu computador para o provedor.
-          Sem chave? O modo demo gera layouts offline com o motor local.
+          Por padrão o Krevo usa o provedor gratuito <b>Pollinations</b>: nada de chave, nada de cadastro
+          (ele libera uma resposta a cada ~30 s). Para uso intenso, cole a sua chave — ela fica no
+          armazenamento local e viaja direto do seu computador para o provedor, sem servidor nosso.
         </p>
       </div>
       <div class="reveal">
@@ -355,8 +358,8 @@
 {
   <span class="k">"title"</span>: <span class="s">"Post de lançamento"</span>,
   <span class="k">"background"</span>: { <span class="k">"angle"</span>: <span class="n">135</span>,
-    <span class="k">"stops"</span>: [<span class="s">"#0B1020"</span>, <span class="s">"#241B4D"</span>] },
-  <span class="k">"palette"</span>: [<span class="s">"#0B1020"</span>, <span class="s">"#6C5CE7"</span>, <span class="s">"#00D4B8"</span>],
+    <span class="k">"stops"</span>: [<span class="s">"#0F1113"</span>, <span class="s">"#16241F"</span>] },
+  <span class="k">"palette"</span>: [<span class="s">"#0F1113"</span>, <span class="s">"#34D39F"</span>, <span class="s">"#F1F1EF"</span>],
   <span class="k">"elements"</span>: [
     { <span class="k">"type"</span>: <span class="s">"text"</span>, <span class="k">"x"</span>: <span class="n">96</span>, <span class="k">"y"</span>: <span class="n">180</span>,
       <span class="k">"content"</span>: <span class="s">"Seu dinheiro,\nno controle."</span>,
@@ -374,7 +377,11 @@
     <div class="wrap">
       <div class="shot reveal">
         <div class="shot-bar"><i></i><i></i><i></i><span class="url">krevo · editor + agente de IA</span></div>
-        <img src="{{AGENT}}" alt="Editor do Krevo ao lado do painel do agente de IA aplicando um design" />
+        <img src="{{AGENT}}" alt="Editor do Krevo ao lado do painel do agente de IA aplicando um design no canvas" />
+      </div>
+      <div class="shot reveal" style="margin-top:22px">
+        <div class="shot-bar"><i></i><i></i><i></i><span class="url">krevo · ajustes do agente</span></div>
+        <img src="{{AI}}" alt="Tela de configuração do agente de IA no Krevo: provedor, chave, modelo e teste de conexão" />
       </div>
     </div>
   </section>
@@ -459,8 +466,8 @@
           </div>
           <small>Windows 10/11 · x64 · 3,4 MB</small>
           <div class="dl-links">
-            <a href="https://github.com/Pedro21062014/krevo/releases/latest/download/Krevo_0.1.1_x64-setup.exe">Instalador <span>.exe · NSIS</span></a>
-            <a href="https://github.com/Pedro21062014/krevo/releases/latest/download/Krevo_0.1.1_x64_en-US.msi">Pacote MSI <span>.msi</span></a>
+            <a href="https://github.com/Pedro21062014/krevo/releases/latest/download/Krevo_0.2.0_x64-setup.exe">Instalador <span>.exe · NSIS</span></a>
+            <a href="https://github.com/Pedro21062014/krevo/releases/latest/download/Krevo_0.2.0_x64_en-US.msi">Pacote MSI <span>.msi</span></a>
           </div>
         </div>
         <div class="dl-card reveal">
@@ -470,7 +477,7 @@
           </div>
           <small>macOS 10.15+ · binário universal</small>
           <div class="dl-links">
-            <a href="https://github.com/Pedro21062014/krevo/releases/latest/download/Krevo_0.1.1_universal.dmg">Universal (Intel + M1–M5) <span>.dmg · 9 MB</span></a>
+            <a href="https://github.com/Pedro21062014/krevo/releases/latest/download/Krevo_0.2.0_universal.dmg">Universal (Intel + M1–M5) <span>.dmg · 9 MB</span></a>
           </div>
         </div>
         <div class="dl-card reveal">
@@ -480,8 +487,8 @@
           </div>
           <small>Debian/Ubuntu · qualquer distro · 4,9 MB</small>
           <div class="dl-links">
-            <a href="https://github.com/Pedro21062014/krevo/releases/latest/download/Krevo_0.1.1_amd64.deb">Debian / Ubuntu <span>.deb</span></a>
-            <a href="https://github.com/Pedro21062014/krevo/releases/latest/download/Krevo_0.1.1_amd64.AppImage">Portátil <span>.AppImage</span></a>
+            <a href="https://github.com/Pedro21062014/krevo/releases/latest/download/Krevo_0.2.0_amd64.deb">Debian / Ubuntu <span>.deb</span></a>
+            <a href="https://github.com/Pedro21062014/krevo/releases/latest/download/Krevo_0.2.0_amd64.AppImage">Portátil <span>.AppImage</span></a>
           </div>
         </div>
       </div>
@@ -501,7 +508,7 @@
       <div class="reveal">
         <details open>
           <summary>Preciso pagar para usar a IA?</summary>
-          <p>Não para o Krevo: o app é grátis e open source. Você conecta a sua própria chave (OpenAI, Claude, Gemini, Groq, DeepSeek, Mistral, OpenRouter) e paga só o que consumir no provedor. Também funciona com Ollama local, de graça e offline.</p>
+          <p>Não. O Krevo já sai funcionando com um provedor gratuito e sem chave: você abre o app, escreve o briefing e o design aparece no canvas. Se quiser mais velocidade ou modelos melhores, conecte a sua própria chave (OpenAI, Claude, Gemini, Groq, DeepSeek, Mistral, OpenRouter) e pague só o que consumir — ou use o Ollama local, de graça e offline.</p>
         </details>
         <details>
           <summary>Minha chave de API fica segura?</summary>
@@ -545,7 +552,7 @@
 <footer>
   <div class="wrap foot">
     <div style="display:flex;align-items:center;gap:12px">
-      <span class="mark" style="width:28px;height:28px;border-radius:8px"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><path d="M7 3v18"/><path d="M18 4L7.5 13.5 18 21"/></svg></span>
+      <span class="mark"><img src="{{LOGO_K}}" alt="" /></span>
       <span><b style="color:var(--text)">Krevo</b> · © 2026 · Licença MIT</span>
     </div>
     <div class="links">

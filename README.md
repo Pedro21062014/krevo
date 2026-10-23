@@ -1,16 +1,18 @@
 <div align="center">
 
-<img src="brand/krevo-logo.png" alt="Krevo" width="420" />
+<img src="brand/krevo-wordmark-light.png#gh-dark-mode-only" alt="Krevo" width="300" />
+<img src="brand/krevo-wordmark-dark.png#gh-light-mode-only" alt="Krevo" width="300" />
 
 ### Crie tudo. Em um só lugar.
 
 **O estúdio de design nativo em Rust** — PDF, apresentações, imagens, vídeo e mais,
-com um agente de IA ao lado e **a sua própria chave de API**.
+com um agente de IA que **funciona de verdade**: grátis e sem chave no primeiro uso,
+ou com **a sua própria API**.
 
 [![build](https://github.com/Pedro21062014/krevo/actions/workflows/build.yml/badge.svg)](https://github.com/Pedro21062014/krevo/actions/workflows/build.yml)
 [![pages](https://github.com/Pedro21062014/krevo/actions/workflows/pages.yml/badge.svg)](https://github.com/Pedro21062014/krevo/actions/workflows/pages.yml)
-[![license](https://img.shields.io/badge/license-MIT-6C5CE7.svg)](LICENSE)
-[![rust](https://img.shields.io/badge/rust-1.77%2B-00D4B8.svg)](https://www.rust-lang.org)
+[![license](https://img.shields.io/badge/license-MIT-34D39F.svg)](LICENSE)
+[![rust](https://img.shields.io/badge/rust-1.77%2B-08090A.svg)](https://www.rust-lang.org)
 
 [Site](https://pedro21062014.github.io/krevo/) · [Download](https://github.com/Pedro21062014/krevo/releases/latest) · [Como contribuir](CONTRIBUTING.md)
 
@@ -22,7 +24,7 @@ com um agente de IA ao lado e **a sua própria chave de API**.
 
 - [O que é o Krevo](#o-que-é-o-krevo)
 - [Aplicativo desktop](#aplicativo-desktop)
-- [Agente de IA (traga a sua chave)](#agente-de-ia-traga-a-sua-chave)
+- [Agente de IA (grátis ou com a sua chave)](#agente-de-ia-grátis-ou-com-a-sua-chave)
 - [PDF vetorial em Rust](#pdf-vetorial-em-rust)
 - [Download](#download)
 - [Rodando do código-fonte](#rodando-do-código-fonte)
@@ -50,7 +52,7 @@ Tauri) e **TypeScript** (interface), que junta no mesmo app:
 | trabalhar com **vídeo** | solta o vídeo no canvas, define capa e exporta o frame |
 | ter **elementos prontos** | 10 templates, 25 ícones, 10 gradientes, 8 paletas |
 | buscar **fotos** | Unsplash com a sua chave + acervo local offline |
-| criar com **IA** | agente que desenha no canvas com a **sua** API (9 provedores) |
+| criar com **IA** | agente que desenha no canvas — **grátis sem chave** ou com a **sua** API (10 provedores) |
 | abrir rápido | app nativo Tauri: abre em menos de 1 s, ~8 MB, sem Electron |
 
 Tudo local. Sem cadastro, sem assinatura, sem telemetria.
@@ -61,12 +63,15 @@ Tudo local. Sem cadastro, sem assinatura, sem telemetria.
 
 ### Tela inicial
 
-- Saudação por horário + campo de **briefing** que já vira design.
-- **Criar novo** em branco por formato (10 presets em px reais).
-- **Skeleton loader** shimmering enquanto os projetos recentes carregam.
+- Interface nova, densa e sem ruído: uma única cor de destaque (verde-menta),
+  tipografia Inter, cartões de 1 px e nenhum gradiente decorativo.
+- Campo de **briefing** que já vira design + atalhos de ideia.
+- **Skeleton loader** enquanto os projetos recentes carregam.
 - **Projetos recentes** com miniatura real da primeira página, contagem de
   páginas e tempo relativo.
-- Abas: **Início · Templates · Elementos · Fotos & Unsplash · Agente de IA · Ajustes**.
+- Abas: **Projetos · Templates · Elementos · Fotos · Agente de IA · Ajustes**.
+
+<img src="site/assets/app-home.jpg" alt="Tela inicial do Krevo" width="100%" />
 
 ### Editor
 
@@ -75,14 +80,18 @@ Tudo local. Sem cadastro, sem assinatura, sem telemetria.
   proporção travada com Shift, snap magnético com guias rosa.
 - Painel de **camadas** (ocultar/bloquear), **páginas** (duplicar/excluir/trocar),
   **inspetor** completo (x, y, w, h, rotação, opacidade, texto, mídia, formas).
-- Histórico de 80 estados (⌘Z / ⇧⌘Z).
+- Barra de ferramentas vertical (selecionar, mão, texto, retângulo, elipse,
+  imagem, vídeo) e painéis de páginas/camadas à esquerda.
+- **Hover** em qualquer elemento antes de selecionar e **edição de texto no
+  lugar** (duplo clique; `Esc` cancela, `⌘↵` confirma).
+- Histórico de 80 estados (⌘Z / ⇧⌘Z), grade opcional, guias de alinhamento.
 - Importação por arraste: imagens, vídeos, `.krevo` e **PDFs**.
 
 <img src="site/assets/app-editor.jpg" alt="Editor do Krevo" width="100%" />
 
 ---
 
-## Agente de IA (traga a sua chave)
+## Agente de IA (grátis ou com a sua chave)
 
 O agente **não escreve código**: ele devolve um **plano de design em JSON**
 (uma lista de elementos posicionados) e o Krevo aplica no canvas — você continua
@@ -93,10 +102,17 @@ briefing  →  system prompt (grid, margem, paleta da marca)  →  provedor
           →  plano JSON  →  elementos no canvas  →  você ajusta  →  exporta
 ```
 
+**Ele funciona assim que você instala:** o provedor padrão é o **Pollinations**,
+gratuito e sem cadastro (limite do plano grátis: ~1 resposta a cada 30 s). Para uso
+intenso, troque para a sua chave em *Ajustes → Agente de IA* — o app tenta de novo
+automaticamente, entende o `Retry-After` do provedor e, se nada responder, aplica um
+rascunho local em vez de deixar você na mão.
+
 Provedores suportados de fábrica:
 
 | Provedor | Id | Modelo padrão | Precisa de chave |
 |---|---|---|---|
+| **Grátis (Pollinations)** | `pollinations` | `openai` | **não** |
 | OpenAI | `openai` | `gpt-4o-mini` | sim |
 | Anthropic | `anthropic` | `claude-sonnet-4-20250514` | sim |
 | Google Gemini | `gemini` | `gemini-2.0-flash` | sim |
@@ -109,8 +125,10 @@ Provedores suportados de fábrica:
 
 - A chave fica no armazenamento local do app e é usada pelo processo Rust para
   falar **direto** com o provedor. Não existe servidor intermediário do Krevo.
-- **Modo demo:** sem chave, um gerador local determinístico monta um layout
-  decente (paleta escolhida por palavra-chave) para você testar tudo offline.
+- **Modo demo/offline:** sem nenhum provedor, um gerador local determinístico monta
+  um layout decente (paleta escolhida por palavra-chave) para você testar tudo offline.
+- **Teste de conexão** no painel de Ajustes: um pedido mínimo valida provedor,
+  chave e modelo e mostra o tempo de resposta.
 - Ajuste fino do prompt em [`crates/krevo-core/src/agent.rs`](crates/krevo-core/src/agent.rs)
   (`system_prompt`).
 
@@ -154,9 +172,9 @@ Os instaladores são gerados automaticamente pelo GitHub Actions a cada push em
 
 | Plataforma | Arquivos | Como instalar |
 |---|---|---|
-| **Windows 10/11 (x64)** | `Krevo_0.1.1_x64-setup.exe`, `Krevo_0.1.1_x64_en-US.msi` | execute o instalador (por usuário) |
-| **macOS 10.15+** | `Krevo_0.1.1_universal.dmg` (Intel + Apple Silicon) | abra o `.dmg` e arraste para Aplicativos |
-| **Linux** | `Krevo_0.1.1_amd64.deb`, `Krevo_0.1.1_amd64.AppImage` | `sudo dpkg -i` ou `chmod +x` no AppImage |
+| **Windows 10/11 (x64)** | `Krevo_0.2.0_x64-setup.exe`, `Krevo_0.2.0_x64_en-US.msi` | execute o instalador (por usuário) |
+| **macOS 10.15+** | `Krevo_0.2.0_universal.dmg` (Intel + Apple Silicon) | abra o `.dmg` e arraste para Aplicativos |
+| **Linux** | `Krevo_0.2.0_amd64.deb`, `Krevo_0.2.0_amd64.AppImage` | `sudo dpkg -i` ou `chmod +x` no AppImage |
 
 Os builds **não são assinados**. No macOS use botão direito → *Abrir*; no Windows
 o SmartScreen pode pedir *Mais informações → Executar assim mesmo*.
@@ -223,7 +241,7 @@ krevo/
 ├── apps/desktop/
 │   ├── src/                       INTERFACE (TypeScript + Vite, zero framework)
 │   │   ├── main.ts  store.ts  bridge.ts  types.ts  util.ts  assets.ts
-│   │   └── ui/  home.ts · editor.ts · agent.ts · render.ts · icons.ts
+│   │   └── ui/  home.ts · editor.ts · agent.ts · render.ts · icons.ts · brand.ts
 │   └── src-tauri/                 APP (Tauri 2) — comandos Rust → JS
 │       ├── src/lib.rs             13 comandos (IA, PDF, arquivos, Unsplash…)
 │       ├── tauri.conf.json        janela, bundles, ícones

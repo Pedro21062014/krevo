@@ -52,7 +52,7 @@ export interface State {
 
 function defaultSettings(): Settings {
   return {
-    provider: "openai",
+    provider: "pollinations",
     apiKey: "",
     model: "",
     baseUrl: "",
