@@ -21,6 +21,10 @@ concurrency:
 env:
   CARGO_TERM_COLOR: always
 
+# Necessário para o tauri-action criar o Release e anexar os instaladores.
+permissions:
+  contents: write
+
 jobs:
   test:
     name: Testes (Rust + TypeScript)
