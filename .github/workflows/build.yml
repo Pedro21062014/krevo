@@ -47,6 +47,10 @@ jobs:
           node-version: 20
           cache: npm
           cache-dependency-path: apps/desktop/package-lock.json
+      - name: Alvos do macOS (binário universal)
+        if: matrix.os == 'macos-latest'
+        run: rustup target add aarch64-apple-darwin x86_64-apple-darwin
+
       - name: Instalar dependências da interface
         working-directory: apps/desktop
         run: npm ci
@@ -70,14 +74,10 @@ jobs:
             os: windows-latest
             args: "--bundles nsis,msi"
             artifact: krevo-windows
-          - label: macOS (Intel)
-            os: macos-13
-            args: "--bundles dmg,app"
-            artifact: krevo-macos-intel
-          - label: macOS (Apple Silicon)
+          - label: macOS (universal: Intel + Apple Silicon)
             os: macos-latest
-            args: "--bundles dmg,app"
-            artifact: krevo-macos-arm
+            args: "--target universal-apple-darwin --bundles dmg,app"
+            artifact: krevo-macos-universal
           - label: Linux (x64)
             os: ubuntu-22.04
             args: "--bundles deb,appimage"
@@ -108,6 +108,10 @@ jobs:
             libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev \
             librsvg2-dev patchelf libssl-dev libsoup-3.0-dev
 
+      - name: Alvos do macOS (binário universal)
+        if: matrix.os == 'macos-latest'
+        run: rustup target add aarch64-apple-darwin x86_64-apple-darwin
+
       - name: Instalar dependências da interface
         working-directory: apps/desktop
         run: npm ci
@@ -130,7 +134,7 @@ jobs:
             | Plataforma | Arquivo |
             |---|---|
             | Windows | `Krevo_*_x64-setup.exe` (NSIS) e `Krevo_*_x64_en-US.msi` |
-            | macOS | `Krevo_*_x64.dmg` (Intel) e `Krevo_*_aarch64.dmg` (Apple Silicon) |
+            | macOS | `Krevo_*_universal.dmg` (Intel + Apple Silicon) |
             | Linux | `Krevo_*_amd64.deb` e `Krevo_*_amd64.AppImage` |
 
             > Os builds não são assinados. No macOS, clique com o botão direito → Abrir na primeira execução.
