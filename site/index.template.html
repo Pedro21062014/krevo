@@ -8,8 +8,9 @@
 <meta property="og:title" content="Krevo — Crie tudo em um só lugar" />
 <meta property="og:description" content="PDF, apresentações, imagens, vídeo, gravação de tela e um agente de IA ao lado — com a sua própria chave de API." />
 <meta property="og:type" content="website" />
-<meta name="theme-color" content="#08090b" />
-<link rel="icon" href="{{FAVICON}}" />
+<link rel="icon" type="image/png" sizes="128x128" href="{{FAVICON}}" />
+<link rel="apple-touch-icon" sizes="512x512" href="{{FAVICON_512}}" />
+<meta name="theme-color" content="#f7f7f4" id="theme-color" />
 <style>
 /* ==========================================================================
    Krevo — site
@@ -18,10 +19,18 @@
    ========================================================================== */
 
 :root{
-  --bg:#08090b; --bg2:#0b0d10; --surface:#0f1114; --surface2:#14171b; --surface3:#191d22;
-  --line:rgba(255,255,255,.07); --line2:rgba(255,255,255,.13); --line3:rgba(255,255,255,.22);
-  --text:#f2f2f0; --text2:#c6c8ca; --muted:#8d9095; --muted2:#63676d;
-  --accent:#35d39f; --accent-soft:rgba(53,211,159,.12); --accent-line:rgba(53,211,159,.34);
+  /* ---- tema claro (padrão) ---- */
+  --bg:#f7f7f4; --bg2:#fdfdfb; --surface:#ffffff; --surface2:#f3f3ef; --surface3:#e9e9e3;
+  --line:rgba(12,14,17,.09); --line2:rgba(12,14,17,.15); --line3:rgba(12,14,17,.28);
+  --text:#0d0e10; --text2:#3a3d42; --muted:#686c72; --muted2:#8a8e94;
+  --accent:#0f9d76; --accent-soft:rgba(15,157,118,.1); --accent-line:rgba(15,157,118,.34);
+  --spot:rgba(12,14,17,.055); --spot-accent:rgba(15,157,118,.09);
+  --glass:rgba(250,250,247,.72); --glass-strong:rgba(250,250,247,.94);
+  --grid-line:rgba(12,14,17,.045);
+  --card-grad:linear-gradient(180deg,#ffffff,#fbfbf8);
+  --final-grad:linear-gradient(180deg,#ffffff,#f4f4ef);
+  --shot-shadow:0 40px 90px -55px rgba(12,14,17,.35), 0 2px 6px rgba(12,14,17,.05);
+  --code-bg:#0d1016; --code-text:#c9d1e6;
   --radius:16px; --max:1180px;
   --font:"Inter","SF Pro Text","Segoe UI",system-ui,-apple-system,sans-serif;
   --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
@@ -29,17 +38,31 @@
   --ease-out:cubic-bezier(.16,1,.3,1);
 }
 
+html[data-theme="dark"]{
+  --bg:#08090b; --bg2:#0b0d10; --surface:#0f1114; --surface2:#14171b; --surface3:#191d22;
+  --line:rgba(255,255,255,.07); --line2:rgba(255,255,255,.13); --line3:rgba(255,255,255,.22);
+  --text:#f2f2f0; --text2:#c6c8ca; --muted:#8d9095; --muted2:#63676d;
+  --accent:#35d39f; --accent-soft:rgba(53,211,159,.12); --accent-line:rgba(53,211,159,.34);
+  --spot:rgba(255,255,255,.09); --spot-accent:rgba(53,211,159,.1);
+  --glass:rgba(8,9,11,.66); --glass-strong:rgba(8,9,11,.92);
+  --grid-line:rgba(255,255,255,.028);
+  --card-grad:linear-gradient(180deg,#0f1114,rgba(11,13,16,.7));
+  --final-grad:linear-gradient(180deg,#0f1114,#0b0d10);
+  --shot-shadow:0 60px 130px -50px rgba(0,0,0,.95);
+  --code-bg:#080a10; --code-text:#c9d1e6;
+}
+
 *{box-sizing:border-box}
-html{scroll-behavior:smooth;scroll-padding-top:92px;-webkit-text-size-adjust:100%;overflow-x:hidden}
+html{scroll-behavior:smooth;scroll-padding-top:92px;-webkit-text-size-adjust:100%;overflow-x:clip}
 body{
   margin:0;background:var(--bg);color:var(--text);font-family:var(--font);
   line-height:1.62;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
-  overflow-x:hidden;
+  overflow-x:clip;
 }
 body::before{
   content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.5;
-  background-image:linear-gradient(rgba(255,255,255,.028) 1px,transparent 1px),
-                   linear-gradient(90deg,rgba(255,255,255,.028) 1px,transparent 1px);
+  background-image:linear-gradient(var(--grid-line) 1px,transparent 1px),
+                   linear-gradient(90deg,var(--grid-line) 1px,transparent 1px);
   background-size:64px 64px;
   mask-image:radial-gradient(ellipse 80% 60% at 50% 0%,#000 25%,transparent 78%);
   -webkit-mask-image:radial-gradient(ellipse 80% 60% at 50% 0%,#000 25%,transparent 78%);
@@ -63,8 +86,9 @@ code{font-family:var(--mono);font-size:.9em;color:var(--text2);background:var(--
 .eyebrow{
   display:inline-flex;align-items:center;gap:9px;font-size:11px;font-weight:650;
   letter-spacing:.14em;text-transform:uppercase;color:var(--text2);
-  background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.015));
+  background:var(--surface);
   border:1px solid var(--line2);padding:6px 13px;border-radius:999px;
+  box-shadow:0 1px 2px rgba(12,14,17,.04);
   backdrop-filter:blur(8px);
 }
 .eyebrow .live{
@@ -85,17 +109,17 @@ code{font-family:var(--mono);font-size:.9em;color:var(--text2);background:var(--
 .btn:active{transform:translateY(0) scale(.99)}
 .btn::after{
   content:"";position:absolute;inset:0;z-index:-1;opacity:0;
-  background:radial-gradient(220px circle at var(--mx,50%) var(--my,50%),rgba(255,255,255,.14),transparent 62%);
+  background:radial-gradient(220px circle at var(--mx,50%) var(--my,50%),var(--spot),transparent 62%);
   transition:opacity .3s;
 }
 .btn:hover::after{opacity:1}
 .btn.primary{
-  background:var(--text);border-color:transparent;color:#0a0b0d;
-  box-shadow:0 12px 34px -14px rgba(255,255,255,.42);
+  background:var(--text);border-color:transparent;color:var(--bg);
+  box-shadow:0 12px 30px -16px rgba(12,14,17,.45);
 }
-.btn.primary:hover{background:#fff;box-shadow:0 16px 40px -14px rgba(255,255,255,.5)}
-.btn.primary::after{background:radial-gradient(220px circle at var(--mx,50%) var(--my,50%),rgba(53,211,159,.4),transparent 60%)}
-.btn.ghost{background:rgba(255,255,255,.02)}
+.btn.primary:hover{opacity:.9;box-shadow:0 18px 40px -16px rgba(12,14,17,.5)}
+.btn.primary::after{background:radial-gradient(220px circle at var(--mx,50%) var(--my,50%),rgba(53,211,159,.55),transparent 60%)}
+.btn.ghost{background:var(--surface)}
 .btn.small{height:40px;padding:0 17px;font-size:14px}
 .btn svg{width:18px;height:18px;flex:0 0 18px}
 .btn .sheen{
@@ -108,29 +132,43 @@ code{font-family:var(--mono);font-size:.9em;color:var(--text2);background:var(--
 /* ---------- nav ---------- */
 header{
   position:sticky;top:0;z-index:100;backdrop-filter:blur(18px) saturate(160%);
-  background:rgba(8,9,11,.62);border-bottom:1px solid transparent;
+  background:var(--glass);border-bottom:1px solid transparent;
   transition:background .35s,border-color .35s,box-shadow .35s;
 }
 header.scrolled{
-  background:rgba(8,9,11,.9);border-color:var(--line);
-  box-shadow:0 20px 50px -30px rgba(0,0,0,.9);
+  background:var(--glass-strong);border-color:var(--line);
+  box-shadow:0 20px 50px -34px rgba(12,14,17,.28);
 }
 nav{display:flex;align-items:center;gap:24px;height:74px;transition:height .35s var(--ease)}
 header.scrolled nav{height:64px}
-.brand{display:flex;align-items:center;gap:11px;font-weight:780;font-size:19px}
-.brand img{height:21px;width:auto;transition:opacity .3s}
+.brand{display:flex;align-items:center;gap:11px;font-weight:780;font-size:19px;flex:0 0 auto}
+.brand img{height:21px;width:auto;flex:0 0 auto;transition:opacity .3s}
+.brand .logo-dark{display:none}
+.brand .logo-light{display:block}
+html[data-theme="dark"] .brand .logo-dark{display:block}
+html[data-theme="dark"] .brand .logo-light{display:none}
 .brand:hover img{opacity:.82}
-.mark{width:30px;height:30px;border-radius:9px;background:var(--text);display:grid;place-items:center;flex-shrink:0}
-.mark img{width:17px;height:17px;object-fit:contain;filter:invert(1)}
+.mark{width:30px;height:30px;border-radius:9px;background:var(--text);display:grid;place-items:center;flex-shrink:0;overflow:hidden}
+.mark img{width:30px;height:30px;object-fit:cover}
 nav .links{display:flex;gap:2px;margin-left:10px;font-size:14px;color:var(--muted)}
 nav .links a{position:relative;padding:7px 12px;border-radius:8px;white-space:nowrap;transition:color .25s,background .25s}
-nav .links a:hover{color:var(--text);background:rgba(255,255,255,.045)}
+nav .links a:hover{color:var(--text);background:var(--spot)}
 nav .links a.active{color:var(--text)}
 nav .links a.active::after{
   content:"";position:absolute;left:12px;right:12px;bottom:1px;height:1.5px;
   background:var(--accent);border-radius:2px;animation:grow .4s var(--ease-out);
 }
 nav .spacer{flex:1}
+.theme-btn{
+  width:38px;height:38px;border-radius:10px;display:grid;place-items:center;flex:0 0 38px;
+  background:var(--surface);border:1px solid var(--line2);color:var(--text2);cursor:pointer;
+  transition:background .25s,border-color .25s,color .25s,transform .35s var(--ease);
+}
+.theme-btn:hover{color:var(--accent);border-color:var(--accent-line);transform:rotate(-12deg)}
+.theme-btn svg{width:17px;height:17px}
+.theme-btn .moon{display:none}
+html[data-theme="dark"] .theme-btn .moon{display:block}
+html[data-theme="dark"] .theme-btn .sun{display:none}
 .nav-cta{display:flex;gap:10px;align-items:center}
 .nav-cta .btn{height:40px;font-size:14px;padding:0 17px}
 .star{display:inline-flex;align-items:center;gap:7px;color:var(--muted);font-size:13.5px;font-weight:600;white-space:nowrap;transition:color .25s}
@@ -147,16 +185,16 @@ nav .spacer{flex:1}
 .aurora{position:absolute;inset:0;pointer-events:none;overflow:hidden}
 .aurora i{position:absolute;display:block;border-radius:50%;filter:blur(90px)}
 .aurora i:nth-child(1){
-  width:720px;height:720px;top:-360px;left:-160px;opacity:.55;
-  background:radial-gradient(circle,#16302a,transparent 66%);animation:drift1 22s ease-in-out infinite;
+  width:720px;height:720px;top:-360px;left:-160px;opacity:.75;
+  background:radial-gradient(circle,rgba(53,211,159,.22),transparent 66%);animation:drift1 22s ease-in-out infinite;
 }
 .aurora i:nth-child(2){
-  width:560px;height:560px;top:-240px;right:-140px;opacity:.2;
-  background:radial-gradient(circle,#35d39f,transparent 68%);animation:drift2 26s ease-in-out infinite;
+  width:560px;height:560px;top:-240px;right:-140px;opacity:.5;
+  background:radial-gradient(circle,rgba(90,124,255,.16),transparent 68%);animation:drift2 26s ease-in-out infinite;
 }
 .aurora i:nth-child(3){
-  width:420px;height:420px;top:280px;left:45%;opacity:.1;
-  background:radial-gradient(circle,#5b7cff,transparent 70%);animation:drift1 30s ease-in-out infinite reverse;
+  width:420px;height:420px;top:280px;left:45%;opacity:.35;
+  background:radial-gradient(circle,rgba(232,182,76,.18),transparent 70%);animation:drift1 30s ease-in-out infinite reverse;
 }
 .hero .wrap{position:relative;z-index:2}
 .hero h1{font-size:clamp(40px,6.6vw,80px);margin:24px 0 22px;max-width:15ch;letter-spacing:-.04em}
@@ -166,7 +204,7 @@ nav .spacer{flex:1}
   animation:wordIn 1s var(--ease-out) forwards;
 }
 .hero h1 .grad{
-  background:linear-gradient(96deg,#35d39f 8%,#8ef0cd 42%,#35d39f 78%);
+  background:linear-gradient(96deg,var(--accent) 8%,#3fd9a9 42%,var(--accent) 78%);
   background-size:220% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;
   animation:wordIn 1s var(--ease-out) forwards, shift 9s ease-in-out infinite 1s;
 }
@@ -181,18 +219,18 @@ nav .spacer{flex:1}
 }
 .meta-row{display:flex;gap:10px 22px;flex-wrap:wrap;color:var(--muted2);font-size:13px}
 .meta-row span{display:inline-flex;align-items:center;gap:8px}
-.meta-row .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px rgba(53,211,159,.13)}
+.meta-row .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 
 /* capturas */
 .shot{
   position:relative;border-radius:18px;overflow:hidden;background:var(--surface);
-  border:1px solid var(--line2);box-shadow:0 60px 130px -50px rgba(0,0,0,.95),0 0 0 1px rgba(255,255,255,.02) inset;
+  border:1px solid var(--line2);box-shadow:var(--shot-shadow);
   transform-style:preserve-3d;transition:transform .5s var(--ease),box-shadow .5s;
 }
 .shot::after{
   content:"";position:absolute;inset:0;pointer-events:none;border-radius:18px;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.09);
-  background:linear-gradient(180deg,rgba(255,255,255,.04),transparent 22%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.5);
+  background:linear-gradient(180deg,rgba(255,255,255,.22),transparent 22%);
 }
 .shot img{width:100%;display:block}
 .shot-bar{display:flex;align-items:center;gap:8px;padding:11px 15px;background:var(--surface2);border-bottom:1px solid var(--line)}
@@ -204,8 +242,8 @@ nav .spacer{flex:1}
 .float-badge{
   position:absolute;z-index:3;display:flex;align-items:center;gap:9px;
   padding:9px 13px;border-radius:11px;font-size:12.5px;font-weight:600;
-  background:rgba(16,19,23,.86);border:1px solid var(--line2);
-  box-shadow:0 22px 50px -22px rgba(0,0,0,.9);backdrop-filter:blur(14px);
+  background:var(--surface);border:1px solid var(--line2);
+  box-shadow:0 22px 44px -26px rgba(12,14,17,.3);backdrop-filter:blur(14px);
   animation:floaty 7s ease-in-out infinite;white-space:nowrap;
 }
 .float-badge svg{width:15px;height:15px;color:var(--accent)}
@@ -219,7 +257,7 @@ nav .spacer{flex:1}
   display:grid;grid-template-columns:repeat(4,1fr);gap:1px;margin-top:64px;
   background:var(--line);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;
 }
-.stats > div{background:linear-gradient(180deg,var(--surface),var(--bg2));padding:26px 24px;transition:background .35s}
+.stats > div{background:var(--surface);padding:26px 24px;transition:background .35s}
 .stats > div:hover{background:var(--surface2)}
 .stats b{
   display:block;font-size:clamp(24px,3vw,34px);font-weight:750;letter-spacing:-.04em;
@@ -249,18 +287,18 @@ main > .hero ~ section::before{display:block}
 .g3{grid-template-columns:repeat(auto-fit,minmax(285px,1fr))}
 .g4{grid-template-columns:repeat(auto-fit,minmax(232px,1fr))}
 .card{
-  position:relative;background:linear-gradient(180deg,var(--surface),rgba(11,13,16,.7));
+  position:relative;background:var(--card-grad);
   border:1px solid var(--line);border-radius:var(--radius);padding:26px;
   overflow:hidden;isolation:isolate;
   transition:transform .4s var(--ease),border-color .4s,background .4s;
 }
 .card::before{
   content:"";position:absolute;inset:0;z-index:-1;opacity:0;transition:opacity .4s;
-  background:radial-gradient(340px circle at var(--mx,50%) var(--my,0%),rgba(53,211,159,.1),transparent 62%);
+  background:radial-gradient(340px circle at var(--mx,50%) var(--my,0%),var(--spot-accent),transparent 62%);
 }
 .card::after{
   content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none;
-  background:radial-gradient(300px circle at var(--mx,50%) var(--my,0%),rgba(255,255,255,.09),transparent 60%);
+  background:radial-gradient(300px circle at var(--mx,50%) var(--my,0%),var(--spot),transparent 60%);
   opacity:0;transition:opacity .4s;
 }
 .card:hover{transform:translateY(-3px);border-color:var(--line2)}
@@ -317,15 +355,15 @@ main > .hero ~ section::before{display:block}
 /* codebox */
 .codebox{
   min-width:0;max-width:100%;
-  background:#080a10;border:1px solid var(--line);border-radius:14px;overflow:hidden;
+  background:var(--code-bg);border:1px solid var(--line);border-radius:14px;overflow:hidden;
   font-family:var(--mono);font-size:12.5px;line-height:1.8;
-  box-shadow:0 40px 90px -40px rgba(0,0,0,.9);
+  box-shadow:0 40px 80px -50px rgba(12,14,17,.5);
 }
 .codebox .top{display:flex;gap:6px;padding:11px 15px;border-bottom:1px solid var(--line);background:var(--surface2);align-items:center}
 .codebox .top i{width:9px;height:9px;border-radius:50%;background:#333845}
 .codebox .top span{margin-left:10px;color:var(--muted2);font-size:11px}
 .codebox .top .rec{width:7px;height:7px;border-radius:50%;background:var(--accent);margin-left:auto;animation:pulse 2s infinite}
-.codebox pre{margin:0;padding:18px;overflow-x:auto;max-width:100%;color:#c9d1e6;scrollbar-width:thin}
+.codebox pre{margin:0;padding:18px;overflow-x:auto;max-width:100%;color:var(--code-text);scrollbar-width:thin}
 .codebox pre span{display:inline}
 .k{color:#9fe8cd}.s{color:#eaeae6}.n{color:#35d39f}.c{color:#5c6267}
 
@@ -349,7 +387,7 @@ main > .hero ~ section::before{display:block}
 .steps{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(272px,1fr));counter-reset:s;position:relative}
 .step{
   position:relative;padding:28px;border-radius:var(--radius);
-  border:1px solid var(--line);background:linear-gradient(180deg,var(--surface),rgba(11,13,16,.6));
+  border:1px solid var(--line);background:var(--card-grad);
   transition:border-color .35s,transform .4s var(--ease);
 }
 .step:hover{border-color:var(--line2);transform:translateY(-2px)}
@@ -370,12 +408,12 @@ main > .hero ~ section::before{display:block}
 .dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(258px,1fr));gap:14px}
 .dl-card{
   position:relative;border:1px solid var(--line);border-radius:var(--radius);padding:26px;
-  background:linear-gradient(180deg,var(--surface),rgba(11,13,16,.6));overflow:hidden;
+  background:var(--card-grad);overflow:hidden;
   transition:border-color .35s,transform .4s var(--ease);
 }
 .dl-card::before{
   content:"";position:absolute;inset:0;opacity:0;transition:opacity .4s;
-  background:radial-gradient(320px circle at var(--mx,50%) var(--my,0%),rgba(53,211,159,.09),transparent 65%);
+  background:radial-gradient(320px circle at var(--mx,50%) var(--my,0%),var(--spot-accent),transparent 65%);
 }
 .dl-card:hover{border-color:var(--line2);transform:translateY(-3px)}
 .dl-card:hover::before{opacity:1}
@@ -417,11 +455,11 @@ details[open] p{animation:fadeIn .35s var(--ease-out)}
 /* cta final */
 .final{
   position:relative;border-radius:22px;padding:72px 40px;text-align:center;overflow:hidden;
-  background:linear-gradient(180deg,var(--surface),var(--bg2));border:1px solid var(--line2);
+  background:var(--final-grad);border:1px solid var(--line2);
 }
 .final::before{
   content:"";position:absolute;width:680px;height:680px;left:50%;top:-460px;transform:translateX(-50%);
-  background:radial-gradient(circle,rgba(53,211,159,.16),transparent 62%);filter:blur(50px);
+  background:radial-gradient(circle,rgba(53,211,159,.26),transparent 62%);filter:blur(50px);
   animation:breathe 9s ease-in-out infinite;
 }
 .final > *{position:relative;z-index:1}
@@ -443,7 +481,7 @@ footer{border-top:1px solid var(--line);padding:46px 0 64px;color:var(--muted2);
   display:grid;place-items:center;background:var(--surface2);border:1px solid var(--line2);
   color:var(--text2);cursor:pointer;opacity:0;transform:translateY(12px);pointer-events:none;
   transition:opacity .35s,transform .35s var(--ease),border-color .25s,color .25s;
-  box-shadow:0 18px 40px -18px rgba(0,0,0,.9);
+  box-shadow:0 18px 34px -22px rgba(12,14,17,.28);
 }
 .to-top.show{opacity:1;transform:none;pointer-events:auto}
 .to-top:hover{border-color:var(--line3);color:var(--accent);transform:translateY(-2px)}
@@ -474,6 +512,89 @@ footer{border-top:1px solid var(--line);padding:46px 0 64px;color:var(--muted2);
 @keyframes breathe{0%,100%{opacity:.7;transform:translateX(-50%) scale(1)}50%{opacity:1;transform:translateX(-50%) scale(1.12)}}
 @keyframes grow{from{transform:scaleX(0);transform-origin:left}to{transform:scaleX(1)}}
 
+
+/* ==========================================================================
+   Cena fixa (scrollytelling): a tela trava e as capturas trocam
+   ========================================================================== */
+.showcase{position:relative;padding:0;counter-increment:none}
+.showcase::before{display:none}
+.scene-track{position:relative;height:420vh}
+.scene-sticky{
+  position:sticky;top:0;height:100vh;height:100svh;
+  display:flex;align-items:center;overflow:hidden;
+}
+.scene-inner{
+  width:100%;max-width:var(--max);margin:0 auto;padding:0 26px;
+  display:grid;grid-template-columns:0.86fr 1.14fr;gap:52px;align-items:center;
+}
+.scene-copy{position:relative;min-height:340px}
+.scene-kicker{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+.scene-count{
+  font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;color:var(--muted2);
+  display:flex;align-items:center;gap:6px;
+}
+.scene-count b{color:var(--accent);font-weight:600}
+.scene-tabs{display:flex;gap:6px;margin-bottom:26px;flex-wrap:wrap}
+.scene-tab{
+  position:relative;padding:7px 13px;border-radius:999px;font-size:12.5px;font-weight:600;
+  border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;
+  transition:color .3s,border-color .3s,background .3s;
+}
+.scene-tab:hover{color:var(--text);border-color:var(--line2)}
+.scene-tab.active{color:var(--accent);border-color:var(--accent-line);background:var(--accent-soft)}
+.scene-pane[hidden]{display:none}
+.scene-pane h2{font-size:clamp(26px,3.1vw,38px);letter-spacing:-.035em;margin:0 0 14px}
+.scene-pane p{color:var(--muted);font-size:15.5px;max-width:44ch}
+.scene-pane ul{list-style:none;padding:0;margin:20px 0 0;display:grid;gap:9px}
+.scene-pane li{display:flex;gap:9px;align-items:flex-start;font-size:13.6px;color:var(--text2)}
+.scene-pane li svg{width:16px;height:16px;flex:0 0 16px;color:var(--accent);margin-top:3px}
+.scene-pane.in-anim h2{animation:sceneIn .55s var(--ease-out) both}
+.scene-pane.in-anim p{animation:sceneIn .55s .06s var(--ease-out) both}
+.scene-pane.in-anim ul{animation:sceneIn .55s .12s var(--ease-out) both}
+
+.scene-progress{
+  margin-top:28px;height:3px;border-radius:3px;background:var(--line);overflow:hidden;max-width:260px;
+}
+.scene-progress i{display:block;height:100%;width:0;background:var(--accent);border-radius:3px;transition:width .4s var(--ease)}
+
+.scene-stage{position:relative;height:min(62vh,520px);perspective:1600px}
+.scene-frame{
+  position:absolute;inset:0;border-radius:16px;overflow:hidden;
+  background:var(--surface);border:1px solid var(--line2);box-shadow:var(--shot-shadow);
+  opacity:0;transform:translateY(26px) scale(.97) rotateX(4deg);
+  transition:opacity .6s var(--ease-out),transform .7s var(--ease-out);
+  pointer-events:none;display:flex;flex-direction:column;
+}
+.scene-frame.active{opacity:1;transform:none;pointer-events:auto}
+.scene-frame img{
+  width:100%;flex:1;min-height:0;object-fit:contain;object-position:center;background:var(--bg2);
+}
+.scene-frame .shot-bar{flex:0 0 auto}
+.scene-label{
+  position:absolute;left:14px;bottom:14px;z-index:3;
+  display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:10px;
+  background:var(--surface);border:1px solid var(--line2);font-size:12px;font-weight:600;
+  box-shadow:0 16px 34px -22px rgba(12,14,17,.4);opacity:0;transform:translateY(8px);
+  transition:opacity .5s var(--ease-out),transform .5s var(--ease-out);
+}
+.scene-frame.active .scene-label{opacity:1;transform:none;transition-delay:.15s}
+.scene-label svg{width:14px;height:14px;color:var(--accent)}
+
+@keyframes sceneIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+@media(max-width:900px){
+  .scene-track{height:auto}
+  .scene-sticky{position:static;height:auto;padding:64px 0}
+  .scene-inner{grid-template-columns:1fr;gap:26px}
+  .scene-stage{height:auto;aspect-ratio:16/11;min-height:0}
+  .scene-copy{min-height:0}
+  .scene-tabs{display:none}
+  .scene-frame{position:relative;opacity:1;transform:none;display:none}
+  .scene-frame.active{display:flex}
+  .scene-progress{display:none}
+  .scene-pane[hidden]{display:none}
+}
+
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;scroll-behavior:auto !important}
   [data-anim]{opacity:1;transform:none;filter:none}
@@ -489,10 +610,12 @@ footer{border-top:1px solid var(--line);padding:46px 0 64px;color:var(--muted2);
   <div class="wrap">
     <nav>
       <a class="brand" href="#top" aria-label="Krevo">
-        <img src="{{LOGO_WORD}}" alt="Krevo" />
+        <img class="logo-light" src="{{LOGO_WORD_DARK}}" alt="Krevo" />
+        <img class="logo-dark" src="{{LOGO_WORD}}" alt="Krevo" />
       </a>
       <div class="links" id="navlinks">
         <a href="#recursos">Recursos</a>
+        <a href="#tour">Tour</a>
         <a href="#gravacao">Gravação</a>
         <a href="#agente">Agente de IA</a>
         <a href="#formatos">Formatos</a>
@@ -505,8 +628,12 @@ footer{border-top:1px solid var(--line);padding:46px 0 64px;color:var(--muted2);
         Open source · MIT
       </a>
       <span class="ver">v0.4.0</span>
+      <button class="theme-btn" id="theme" aria-label="Alternar tema claro e escuro" title="Alternar tema">
+        <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.2 5.2l1.6 1.6M17.2 17.2l1.6 1.6M18.8 5.2l-1.6 1.6M6.8 17.2l-1.6 1.6"/></svg>
+        <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 019.5 4a8.5 8.5 0 1010.5 10.5z"/></svg>
+      </button>
       <div class="nav-cta">
-        <a class="btn primary small" href="#download">Baixar grátis<span class="sheen"></span></a>
+        <a class="btn primary small" href="#download">Baixar<span class="sm-hide"> grátis</span><span class="sheen"></span></a>
       </div>
     </nav>
   </div>
@@ -637,6 +764,78 @@ footer{border-top:1px solid var(--line);padding:46px 0 64px;color:var(--muted2);
           <h3>Atalhos e menu de contexto</h3>
           <p>Botão direito abre tudo do elemento e <code>?</code> mostra a lista completa. Histórico de 80 estados, guias e snap magnético.</p>
           <span class="tag">botão direito · ? · ⌘Z</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ===================== CENA FIXA (scrollytelling) ===================== -->
+  <section class="showcase" id="tour">
+    <div class="scene-track">
+      <div class="scene-sticky">
+        <div class="scene-inner">
+          <div class="scene-copy">
+            <div class="scene-kicker">
+              <span class="eyebrow plain">Tour rápido</span>
+              <span class="scene-count"><b id="scene-now">01</b> / 03</span>
+            </div>
+            <div class="scene-tabs" id="scene-tabs">
+              <button class="scene-tab active" data-scene="0">Criar</button>
+              <button class="scene-tab" data-scene="1">Gravar</button>
+              <button class="scene-tab" data-scene="2">Agente de IA</button>
+            </div>
+
+            <div class="scene-pane in-anim" data-scene-pane="0">
+              <h2>Escolha a mídia,<br>depois o formato.</h2>
+              <p>Seis famílias de mídia e dezenas de formatos prontos. O projeto nasce com arte de fundo e paleta definidas — nunca com uma tela em branco.</p>
+              <ul>
+                <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>1:1, 4:5, 9:16, 16:9, A4, 4K e cartão</li>
+                <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Tamanho próprio em pixels</li>
+                <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Lembra a última escolha</li>
+              </ul>
+            </div>
+
+            <div class="scene-pane" data-scene-pane="1" hidden>
+              <h2>Grave a tela<br>e jogue no canvas.</h2>
+              <p>Tela inteira, janela, aba ou câmera — com microfone, áudio do sistema e câmera em bolha. O vídeo entra como <code>blob:</code> local e o editor não trava.</p>
+              <ul>
+                <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>720p 24 fps até 4K</li>
+                <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Contagem, pausa e prévia antes de aprovar</li>
+                <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Inserir no design ou baixar</li>
+              </ul>
+            </div>
+
+            <div class="scene-pane" data-scene-pane="2" hidden>
+              <h2>Descreva.<br>Ele monta o design.</h2>
+              <p>O agente lê o briefing, escolhe paleta e tipografia e devolve um projeto editável no canvas. Grátis e sem chave no primeiro uso; ou com a sua API.</p>
+              <ul>
+                <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Edita elementos reais, não uma imagem</li>
+                <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>10 provedores + Ollama local</li>
+                <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Modo demo offline</li>
+              </ul>
+            </div>
+
+            <div class="scene-progress"><i id="scene-bar"></i></div>
+          </div>
+
+          <div class="scene-stage" id="scene-stage">
+            <div class="scene-frame active" data-scene-frame="0">
+              <div class="shot-bar"><i></i><i></i><i></i><span class="url">krevo · criar (⌘N)</span></div>
+              <img src="{{CREATE}}" alt="Diálogo de criação do Krevo com tipo de mídia e formato" />
+              <span class="scene-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Criar em duas etapas</span>
+            </div>
+            <div class="scene-frame" data-scene-frame="1">
+              <div class="shot-bar"><i></i><i></i><i></i><span class="url">krevo · gravar (⌘⇧R)</span></div>
+              <img src="{{RECORD}}" alt="Estúdio de gravação de tela e câmera do Krevo" />
+              <span class="scene-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="7"/></svg>Gravação de tela</span>
+            </div>
+            <div class="scene-frame" data-scene-frame="2">
+              <div class="shot-bar"><i></i><i></i><i></i><span class="url">krevo · agente de IA</span></div>
+              <img src="{{AGENT}}" alt="Agente de IA do Krevo montando um design no canvas" />
+              <span class="scene-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 4l1.8 4.9L19 10l-5.2 2.1L12 17l-1.8-4.9L5 10l5.2-2.1z"/></svg>Agente de IA</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -984,16 +1183,33 @@ footer{border-top:1px solid var(--line);padding:46px 0 64px;color:var(--muted2);
 (() => {
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+
+  /* ---------- tema claro (padrão) / escuro ---------- */
+  const root = document.documentElement;
+  const saved = localStorage.getItem('krevo.site.theme');
+  if (saved === 'dark') root.dataset.theme = 'dark';
+  const themeColor = document.getElementById('theme-color');
+  const paintThemeColor = () => {
+    if (themeColor) themeColor.content = root.dataset.theme === 'dark' ? '#08090b' : '#f7f7f4';
+  };
+  paintThemeColor();
+  document.getElementById('theme')?.addEventListener('click', () => {
+    const dark = root.dataset.theme !== 'dark';
+    root.dataset.theme = dark ? 'dark' : 'light';
+    localStorage.setItem('krevo.site.theme', dark ? 'dark' : 'light');
+    paintThemeColor();
+  });
+
   /* ---------- progresso + header + botão topo ---------- */
   const hdr = document.getElementById('hdr');
-  const bar = document.getElementById('progress');
+  const progressBar = document.getElementById('progress');
   const totop = document.getElementById('totop');
   const onScroll = () => {
     const y = scrollY;
     hdr.classList.toggle('scrolled', y > 8);
     totop.classList.toggle('show', y > 900);
     const max = document.documentElement.scrollHeight - innerHeight;
-    bar.style.width = max > 0 ? (y / max) * 100 + '%' : '0%';
+    progressBar.style.width = max > 0 ? (y / max) * 100 + '%' : '0%';
   };
   addEventListener('scroll', onScroll, { passive: true });
   onScroll();
@@ -1106,6 +1322,65 @@ footer{border-top:1px solid var(--line);padding:46px 0 64px;color:var(--muted2);
     }
   }, { threshold: 0.6 });
   document.querySelectorAll('[data-count]').forEach((el) => countIO.observe(el));
+
+
+  /* ---------- cena fixa: scroll controla as capturas ---------- */
+  const sceneTrack = document.querySelector('.scene-track');
+  const frames = [...document.querySelectorAll('[data-scene-frame]')];
+  const panes = [...document.querySelectorAll('[data-scene-pane]')];
+  const tabs = [...document.querySelectorAll('.scene-tab')];
+  const bar = document.getElementById('scene-bar');
+  const now = document.getElementById('scene-now');
+  const stage = document.getElementById('scene-stage');
+  let sceneActive = -1;
+  let lockUntil = 0;
+
+  const setScene = (i) => {
+    if (i === sceneActive || i < 0 || i >= frames.length) return;
+    sceneActive = i;
+    frames.forEach((f, k) => f.classList.toggle('active', k === i));
+    panes.forEach((p, k) => {
+      p.hidden = k !== i;
+      p.classList.toggle('in-anim', k === i);
+    });
+    tabs.forEach((t, k) => t.classList.toggle('active', k === i));
+    if (now) now.textContent = String(i + 1).padStart(2, '0');
+  };
+
+  // clique nas abas: leva o scroll até a parte correspondente da cena
+  const scrollToScene = (i) => {
+    if (!sceneTrack) return;
+    const rect = sceneTrack.getBoundingClientRect();
+    const top = rect.top + scrollY;
+    const span = sceneTrack.offsetHeight - innerHeight;
+    if (span <= 0) return;
+    const target = top + span * ((i + 0.5) / frames.length);
+    lockUntil = performance.now() + 900;
+    setScene(i);
+    scrollTo({ top: target, behavior: reduce ? 'auto' : 'smooth' });
+  };
+  tabs.forEach((t) => t.addEventListener('click', () => scrollToScene(Number(t.dataset.scene))));
+
+  const updateScene = () => {
+    if (!sceneTrack) return;
+    const rect = sceneTrack.getBoundingClientRect();
+    const span = rect.height - innerHeight;
+    if (span <= 0) { setScene(0); return; }
+    const progress = Math.min(1, Math.max(0, -rect.top / span));
+    const withStage = stage && stage.offsetParent !== null;
+    if (!withStage) return; // no mobile a cena é estática
+    const index = Math.min(frames.length - 1, Math.floor(progress * frames.length));
+    if (performance.now() > lockUntil) setScene(index);
+    if (bar) bar.style.width = (progress * 100).toFixed(1) + '%';
+  };
+  let sceneTick = false;
+  addEventListener('scroll', () => {
+    if (sceneTick) return;
+    sceneTick = true;
+    requestAnimationFrame(() => { updateScene(); sceneTick = false; });
+  }, { passive: true });
+  addEventListener('resize', updateScene);
+  updateScene();
 
   /* ---------- marquee infinito ---------- */
   const mq = document.querySelector('.marquee-track');

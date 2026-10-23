@@ -22,8 +22,10 @@ IMAGES = {
     "{{MENU}}": ("app-menu.jpg", "image/jpeg"),
     "{{SHORTCUTS}}": ("app-shortcuts.jpg", "image/jpeg"),
     "{{LOGO_WORD}}": ("logo-light.png", "image/png"),
+    "{{LOGO_WORD_DARK}}": ("logo-word-dark.png", "image/png"),
     "{{LOGO_K}}": ("logo-k.png", "image/png"),
     "{{FAVICON}}": ("logo-icon.png", "image/png"),
+    "{{FAVICON_512}}": ("logo-icon-512.png", "image/png"),
 }
 
 
