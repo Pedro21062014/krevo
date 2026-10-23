@@ -4,201 +4,486 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Krevo — Crie tudo em um só lugar</title>
-<meta name="description" content="Krevo é o estúdio de design nativo em Rust com agente de IA: PDF, apresentações, imagens, vídeo e mais. Traga a sua própria API. Grátis e open source." />
+<meta name="description" content="Krevo é o estúdio de design nativo em Rust com agente de IA: PDF, apresentações, imagens, vídeo, gravação de tela e mais. Traga a sua própria API. Grátis e open source." />
 <meta property="og:title" content="Krevo — Crie tudo em um só lugar" />
-<meta property="og:description" content="PDF, apresentações, imagens, vídeo e muito mais — com um agente de IA ao lado e a sua própria chave de API." />
+<meta property="og:description" content="PDF, apresentações, imagens, vídeo, gravação de tela e um agente de IA ao lado — com a sua própria chave de API." />
 <meta property="og:type" content="website" />
-<meta name="theme-color" content="#0a0b0d" />
+<meta name="theme-color" content="#08090b" />
 <link rel="icon" href="{{FAVICON}}" />
 <style>
-  :root{
-    --bg:#0a0b0d; --bg2:#0d0f11; --surface:#111316; --surface2:#15181b;
-    --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.15);
-    --text:#f1f1ef; --muted:#8b8e92; --muted2:#666b70;
-    --accent:#34d39f; --accent2:#34d39f; --accent3:#e8e8e4;
-    --radius:14px; --max:1180px;
-    --font:"Inter","Segoe UI",system-ui,-apple-system,sans-serif;
-    --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
-  }
-  *{box-sizing:border-box}
-  html{scroll-behavior:smooth}
-  body{
-    margin:0;background:var(--bg);color:var(--text);font-family:var(--font);
-    line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden;
-  }
-  a{color:inherit;text-decoration:none}
-  h1,h2,h3,h4{margin:0;letter-spacing:-.03em;line-height:1.1;font-weight:760}
-  p{margin:0}
-  img{max-width:100%;display:block}
-  .wrap{max-width:var(--max);margin:0 auto;padding:0 24px}
-  .eyebrow{
-    display:inline-flex;align-items:center;gap:8px;font-size:11.5px;font-weight:600;
-    letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
-    background:var(--surface);border:1px solid var(--line2);
-    padding:5px 11px;border-radius:999px;
-  }
-  .eyebrow::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--accent)}
-  .btn{
-    display:inline-flex;align-items:center;justify-content:center;gap:9px;
-    height:46px;padding:0 22px;border-radius:12px;font-weight:620;font-size:15px;
-    border:1px solid var(--line2);background:var(--surface2);color:var(--text);
-    transition:transform .15s ease,filter .15s ease,background .15s ease,border-color .15s;
-    cursor:pointer;
-  }
-  .btn:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.3)}
-  .btn.primary{
-    background:var(--text);border:1px solid transparent;color:#0a0b0d;
-    box-shadow:0 10px 30px rgba(0,0,0,.45);
-  }
-  .btn.primary:hover{background:#fff;transform:translateY(-1px)}
-  .btn.ghost{background:transparent}
-  .btn svg{width:18px;height:18px}
+/* ==========================================================================
+   Krevo — site
+   Sistema: preto grafite, papel off-white, um único acento (menta).
+   Animação em camadas: entrada, scroll, cursor e micro-interações.
+   ========================================================================== */
 
-  /* ---------- nav ---------- */
-  header{position:sticky;top:0;z-index:100;backdrop-filter:blur(16px);background:rgba(7,8,13,.72);border-bottom:1px solid transparent;transition:border-color .2s,background .2s}
-  header.scrolled{border-color:var(--line);background:rgba(7,8,13,.9)}
-  nav{display:flex;align-items:center;gap:28px;height:70px}
-  .brand{display:flex;align-items:center;gap:11px;font-weight:780;font-size:19px;letter-spacing:-.02em}
-  .brand img{height:22px;width:auto;display:block}
-  .mark{width:30px;height:30px;border-radius:9px;background:var(--text);display:grid;place-items:center;flex-shrink:0}
-  .mark img{width:17px;height:17px;object-fit:contain;filter:invert(1)}
-  .foot .mark{background:var(--surface2);border:1px solid var(--line)}
-  nav .links{display:flex;gap:26px;margin-left:18px;font-size:14.5px;color:var(--muted)}
-  nav .links a:hover{color:var(--text)}
-  nav .spacer{flex:1}
-  .nav-cta{display:flex;gap:10px;align-items:center}
-  .nav-cta .btn{height:40px;font-size:14px;padding:0 16px}
-  .star{display:inline-flex;align-items:center;gap:7px;color:var(--muted);font-size:13.5px;font-weight:600}
-  @media(max-width:940px){nav .links{display:none}.star{display:none}}
+:root{
+  --bg:#08090b; --bg2:#0b0d10; --surface:#0f1114; --surface2:#14171b; --surface3:#191d22;
+  --line:rgba(255,255,255,.07); --line2:rgba(255,255,255,.13); --line3:rgba(255,255,255,.22);
+  --text:#f2f2f0; --text2:#c6c8ca; --muted:#8d9095; --muted2:#63676d;
+  --accent:#35d39f; --accent-soft:rgba(53,211,159,.12); --accent-line:rgba(53,211,159,.34);
+  --radius:16px; --max:1180px;
+  --font:"Inter","SF Pro Text","Segoe UI",system-ui,-apple-system,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --ease:cubic-bezier(.22,.61,.24,1);
+  --ease-out:cubic-bezier(.16,1,.3,1);
+}
 
-  /* ---------- hero ---------- */
-  .hero{position:relative;padding:84px 0 30px;overflow:hidden}
-  .glow{position:absolute;border-radius:50%;filter:blur(90px);opacity:.5;pointer-events:none}
-  .glow.a{width:620px;height:620px;background:radial-gradient(circle,#1b2b26,transparent 68%);top:-260px;left:-120px;opacity:.75}
-  .glow.b{width:520px;height:520px;background:radial-gradient(circle,#34d39f,transparent 70%);top:-220px;right:-160px;opacity:.12}
-  .hero h1{font-size:clamp(40px,6.4vw,76px);margin:22px 0 20px;max-width:15ch}
-  .hero h1 .grad{color:var(--accent)}
-  .hero .lede{font-size:clamp(16px,1.6vw,19.5px);color:var(--muted);max-width:62ch}
-  .hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin:32px 0 18px}
-  .meta-row{display:flex;gap:22px;flex-wrap:wrap;color:var(--muted2);font-size:13px}
-  .meta-row span{display:inline-flex;align-items:center;gap:7px}
-  .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px rgba(52,211,159,.14)}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:92px;-webkit-text-size-adjust:100%;overflow-x:hidden}
+body{
+  margin:0;background:var(--bg);color:var(--text);font-family:var(--font);
+  line-height:1.62;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+  overflow-x:hidden;
+}
+body::before{
+  content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.5;
+  background-image:linear-gradient(rgba(255,255,255,.028) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(255,255,255,.028) 1px,transparent 1px);
+  background-size:64px 64px;
+  mask-image:radial-gradient(ellipse 80% 60% at 50% 0%,#000 25%,transparent 78%);
+  -webkit-mask-image:radial-gradient(ellipse 80% 60% at 50% 0%,#000 25%,transparent 78%);
+}
+main{position:relative;z-index:1}
+a{color:inherit;text-decoration:none}
+h1,h2,h3,h4{margin:0;letter-spacing:-.032em;line-height:1.06;font-weight:750}
+p{margin:0}
+img{max-width:100%;display:block}
+code{font-family:var(--mono);font-size:.9em;color:var(--text2);background:var(--surface2);border:1px solid var(--line);border-radius:6px;padding:1px 6px}
+.wrap{max-width:var(--max);margin:0 auto;padding:0 26px}
 
-  /* screenshots */
-  .shot{
-    position:relative;margin-top:56px;border-radius:18px;overflow:hidden;
-    border:1px solid var(--line2);box-shadow:0 50px 120px rgba(0,0,0,.6);
-    background:var(--surface);
-  }
-  .shot::after{content:"";position:absolute;inset:0;box-shadow:inset 0 1px 0 rgba(255,255,255,.08);border-radius:18px;pointer-events:none}
-  .shot img{width:100%}
-  .shot-bar{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--surface2);border-bottom:1px solid var(--line)}
-  .shot-bar i{width:10px;height:10px;border-radius:50%;background:#3a3f4d;display:block}
-  .shot-bar .url{margin-left:12px;font-family:var(--mono);font-size:11.5px;color:var(--muted2)}
+/* ---------- barra de progresso ---------- */
+.scroll-progress{
+  position:fixed;top:0;left:0;height:2px;width:0;z-index:200;
+  background:linear-gradient(90deg,rgba(53,211,159,0),var(--accent));
+  box-shadow:0 0 12px rgba(53,211,159,.5);transition:width .1s linear;
+}
 
-  /* ---------- section ---------- */
-  section{padding:96px 0}
-  .sec-head{max-width:720px;margin-bottom:46px}
-  .sec-head h2{font-size:clamp(28px,3.6vw,44px);margin:16px 0 14px}
-  .sec-head p{color:var(--muted);font-size:16.5px}
-  .grid{display:grid;gap:16px}
-  .g3{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
-  .g4{grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
-  .card{
-    background:var(--surface);
-    border:1px solid var(--line);border-radius:var(--radius);padding:24px;
-    transition:transform .2s ease,border-color .2s ease,background .2s ease;
-  }
-  .card:hover{transform:translateY(-2px);border-color:var(--line2)}
-  .card .ico{
-    width:38px;height:38px;border-radius:10px;display:grid;place-items:center;margin-bottom:16px;
-    background:var(--surface2);border:1px solid var(--line2);color:var(--muted);
-  }
-  .card .ico svg{width:21px;height:21px}
-  .card h3{font-size:17px;margin-bottom:8px}
-  .card p{color:var(--muted);font-size:14.5px}
-  .card .tag{font-family:var(--mono);font-size:11px;color:var(--muted2);margin-top:14px;display:block}
+/* ---------- eyebrow / botões ---------- */
+.eyebrow{
+  display:inline-flex;align-items:center;gap:9px;font-size:11px;font-weight:650;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--text2);
+  background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.015));
+  border:1px solid var(--line2);padding:6px 13px;border-radius:999px;
+  backdrop-filter:blur(8px);
+}
+.eyebrow .live{
+  width:6px;height:6px;border-radius:50%;background:var(--accent);
+  box-shadow:0 0 0 0 rgba(53,211,159,.55);animation:pulse 2.4s var(--ease) infinite;
+}
+.eyebrow.plain::before{content:none}
 
-  /* agent split */
-  .split{display:grid;grid-template-columns:1fr 1fr;gap:44px;align-items:center}
-  @media(max-width:900px){.split{grid-template-columns:1fr}}
-  .providers{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
-  .pill{font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:999px;border:1px solid var(--line2);background:var(--surface2);color:var(--muted)}
-  .codebox{
-    background:#0a0c13;border:1px solid var(--line);border-radius:14px;overflow:hidden;
-    font-family:var(--mono);font-size:12.5px;line-height:1.75;
-  }
-  .codebox .top{display:flex;gap:6px;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--surface2);align-items:center}
-  .codebox .top i{width:9px;height:9px;border-radius:50%;background:#333845}
-  .codebox .top span{margin-left:8px;color:var(--muted2);font-size:11px}
-  .codebox pre{margin:0;padding:16px;overflow-x:auto;color:#c9d1e6}
-  .k{color:#9fe8cd}.s{color:#e8e8e4}.n{color:#34d39f}.c{color:#5c6267}
+.btn{
+  position:relative;display:inline-flex;align-items:center;justify-content:center;gap:9px;
+  height:48px;padding:0 24px;border-radius:12px;font-weight:630;font-size:15px;
+  border:1px solid var(--line2);background:var(--surface2);color:var(--text);
+  cursor:pointer;overflow:hidden;isolation:isolate;white-space:nowrap;
+  transition:transform .28s var(--ease),border-color .28s,background .28s,box-shadow .28s;
+  will-change:transform;
+}
+.btn:hover{transform:translateY(-2px);border-color:var(--line3);background:var(--surface3)}
+.btn:active{transform:translateY(0) scale(.99)}
+.btn::after{
+  content:"";position:absolute;inset:0;z-index:-1;opacity:0;
+  background:radial-gradient(220px circle at var(--mx,50%) var(--my,50%),rgba(255,255,255,.14),transparent 62%);
+  transition:opacity .3s;
+}
+.btn:hover::after{opacity:1}
+.btn.primary{
+  background:var(--text);border-color:transparent;color:#0a0b0d;
+  box-shadow:0 12px 34px -14px rgba(255,255,255,.42);
+}
+.btn.primary:hover{background:#fff;box-shadow:0 16px 40px -14px rgba(255,255,255,.5)}
+.btn.primary::after{background:radial-gradient(220px circle at var(--mx,50%) var(--my,50%),rgba(53,211,159,.4),transparent 60%)}
+.btn.ghost{background:rgba(255,255,255,.02)}
+.btn.small{height:40px;padding:0 17px;font-size:14px}
+.btn svg{width:18px;height:18px;flex:0 0 18px}
+.btn .sheen{
+  position:absolute;top:0;left:-40%;width:35%;height:100%;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.5),transparent);
+  transform:skewX(-18deg);opacity:0;
+}
+.btn.primary:hover .sheen{animation:sheen 1s var(--ease-out) forwards}
 
-  /* formats */
-  .fmt{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
-  .fmt div{
-    border:1px solid var(--line);border-radius:12px;padding:16px;background:var(--surface);
-    display:flex;flex-direction:column;gap:4px;
-  }
-  .fmt b{font-size:14px}
-  .fmt small{color:var(--muted2);font-family:var(--mono);font-size:11px}
+/* ---------- nav ---------- */
+header{
+  position:sticky;top:0;z-index:100;backdrop-filter:blur(18px) saturate(160%);
+  background:rgba(8,9,11,.62);border-bottom:1px solid transparent;
+  transition:background .35s,border-color .35s,box-shadow .35s;
+}
+header.scrolled{
+  background:rgba(8,9,11,.9);border-color:var(--line);
+  box-shadow:0 20px 50px -30px rgba(0,0,0,.9);
+}
+nav{display:flex;align-items:center;gap:24px;height:74px;transition:height .35s var(--ease)}
+header.scrolled nav{height:64px}
+.brand{display:flex;align-items:center;gap:11px;font-weight:780;font-size:19px}
+.brand img{height:21px;width:auto;transition:opacity .3s}
+.brand:hover img{opacity:.82}
+.mark{width:30px;height:30px;border-radius:9px;background:var(--text);display:grid;place-items:center;flex-shrink:0}
+.mark img{width:17px;height:17px;object-fit:contain;filter:invert(1)}
+nav .links{display:flex;gap:2px;margin-left:10px;font-size:14px;color:var(--muted)}
+nav .links a{position:relative;padding:7px 12px;border-radius:8px;white-space:nowrap;transition:color .25s,background .25s}
+nav .links a:hover{color:var(--text);background:rgba(255,255,255,.045)}
+nav .links a.active{color:var(--text)}
+nav .links a.active::after{
+  content:"";position:absolute;left:12px;right:12px;bottom:1px;height:1.5px;
+  background:var(--accent);border-radius:2px;animation:grow .4s var(--ease-out);
+}
+nav .spacer{flex:1}
+.nav-cta{display:flex;gap:10px;align-items:center}
+.nav-cta .btn{height:40px;font-size:14px;padding:0 17px}
+.star{display:inline-flex;align-items:center;gap:7px;color:var(--muted);font-size:13.5px;font-weight:600;white-space:nowrap;transition:color .25s}
+.star:hover{color:var(--text)}
+.star svg{width:16px;height:16px}
+.ver{
+  font-family:var(--mono);font-size:11px;color:var(--accent);background:var(--accent-soft);
+  border:1px solid var(--accent-line);border-radius:999px;padding:3px 9px;
+}
+@media(max-width:1080px){nav .links{display:none}.star{display:none}}
 
-  /* steps */
-  .steps{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));counter-reset:s}
-  .step{position:relative;padding:26px;border-radius:var(--radius);border:1px solid var(--line);background:var(--surface)}
-  .step::before{
-    counter-increment:s;content:counter(s,decimal-leading-zero);
-    font-family:var(--mono);font-size:12px;color:var(--accent);letter-spacing:.1em;
-    display:block;margin-bottom:12px;
-  }
-  .step h3{font-size:16.5px;margin-bottom:8px}
-  .step p{color:var(--muted);font-size:14.5px}
+/* ---------- hero ---------- */
+.hero{position:relative;padding:92px 0 24px;overflow:hidden}
+.aurora{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.aurora i{position:absolute;display:block;border-radius:50%;filter:blur(90px)}
+.aurora i:nth-child(1){
+  width:720px;height:720px;top:-360px;left:-160px;opacity:.55;
+  background:radial-gradient(circle,#16302a,transparent 66%);animation:drift1 22s ease-in-out infinite;
+}
+.aurora i:nth-child(2){
+  width:560px;height:560px;top:-240px;right:-140px;opacity:.2;
+  background:radial-gradient(circle,#35d39f,transparent 68%);animation:drift2 26s ease-in-out infinite;
+}
+.aurora i:nth-child(3){
+  width:420px;height:420px;top:280px;left:45%;opacity:.1;
+  background:radial-gradient(circle,#5b7cff,transparent 70%);animation:drift1 30s ease-in-out infinite reverse;
+}
+.hero .wrap{position:relative;z-index:2}
+.hero h1{font-size:clamp(40px,6.6vw,80px);margin:24px 0 22px;max-width:15ch;letter-spacing:-.04em}
+.hero h1 .line{display:block;overflow:hidden}
+.hero h1 .w{
+  display:inline-block;opacity:0;transform:translateY(120%) rotate(2deg);
+  animation:wordIn 1s var(--ease-out) forwards;
+}
+.hero h1 .grad{
+  background:linear-gradient(96deg,#35d39f 8%,#8ef0cd 42%,#35d39f 78%);
+  background-size:220% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;
+  animation:wordIn 1s var(--ease-out) forwards, shift 9s ease-in-out infinite 1s;
+}
+.lede{font-size:clamp(15.5px,1.55vw,19px);color:var(--muted);max-width:63ch;line-height:1.68}
+.lede b{color:var(--text2);font-weight:620}
+.hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin:34px 0 22px}
+.hero-actions .btn{max-width:100%}
+@media(max-width:640px){
+  .sm-hide{display:none}
+  .btn{white-space:normal;height:auto;min-height:46px;padding:11px 18px;line-height:1.3;text-align:center}
+  .nav-cta .btn{min-height:40px;padding:9px 16px}
+}
+.meta-row{display:flex;gap:10px 22px;flex-wrap:wrap;color:var(--muted2);font-size:13px}
+.meta-row span{display:inline-flex;align-items:center;gap:8px}
+.meta-row .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px rgba(53,211,159,.13)}
 
-  /* downloads */
-  .dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}
-  .dl-card{border:1px solid var(--line);border-radius:var(--radius);padding:24px;background:var(--surface);transition:border-color .2s,transform .2s}
-  .dl-card:hover{border-color:var(--line2);transform:translateY(-2px)}
-  .dl-card .os{display:flex;align-items:center;gap:10px;font-weight:700;margin-bottom:6px}
-  .dl-card .os svg{width:20px;height:20px}
-  .dl-card small{color:var(--muted2);font-family:var(--mono);font-size:11.5px;display:block;margin-bottom:16px}
-  .dl-links{display:flex;flex-direction:column;gap:8px}
-  .dl-links a{
-    display:flex;justify-content:space-between;align-items:center;gap:10px;
-    padding:10px 13px;border-radius:10px;background:var(--surface2);border:1px solid var(--line);
-    font-size:13.5px;font-weight:600;transition:background .15s,border-color .15s;
-  }
-  .dl-links a:hover{background:#1b1f2c;border-color:var(--line2)}
-  .dl-links a span{color:var(--muted2);font-family:var(--mono);font-size:11px;font-weight:400}
+/* capturas */
+.shot{
+  position:relative;border-radius:18px;overflow:hidden;background:var(--surface);
+  border:1px solid var(--line2);box-shadow:0 60px 130px -50px rgba(0,0,0,.95),0 0 0 1px rgba(255,255,255,.02) inset;
+  transform-style:preserve-3d;transition:transform .5s var(--ease),box-shadow .5s;
+}
+.shot::after{
+  content:"";position:absolute;inset:0;pointer-events:none;border-radius:18px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.09);
+  background:linear-gradient(180deg,rgba(255,255,255,.04),transparent 22%);
+}
+.shot img{width:100%;display:block}
+.shot-bar{display:flex;align-items:center;gap:8px;padding:11px 15px;background:var(--surface2);border-bottom:1px solid var(--line)}
+.shot-bar i{width:9px;height:9px;border-radius:50%;background:#333944;display:block}
+.shot-bar .url{margin-left:12px;font-family:var(--mono);font-size:11px;color:var(--muted2);letter-spacing:.02em}
+.shot-wrap{position:relative;perspective:1400px}
+.hero .shot{margin-top:62px}
+.hero .shot img{aspect-ratio:16/10;object-fit:cover;object-position:top center}
+.float-badge{
+  position:absolute;z-index:3;display:flex;align-items:center;gap:9px;
+  padding:9px 13px;border-radius:11px;font-size:12.5px;font-weight:600;
+  background:rgba(16,19,23,.86);border:1px solid var(--line2);
+  box-shadow:0 22px 50px -22px rgba(0,0,0,.9);backdrop-filter:blur(14px);
+  animation:floaty 7s ease-in-out infinite;white-space:nowrap;
+}
+.float-badge svg{width:15px;height:15px;color:var(--accent)}
+.float-badge.a{top:16%;right:-8px;animation-delay:.4s}
+.float-badge.b{bottom:20%;left:-12px;animation-delay:1.6s}
+.float-badge .pulse{width:7px;height:7px;border-radius:50%;background:#ff6b6b;animation:pulse 1.7s infinite}
+@media(max-width:900px){.float-badge{display:none}}
 
-  /* faq */
-  details{border:1px solid var(--line);border-radius:12px;padding:18px 20px;background:var(--surface);margin-bottom:10px}
-  details[open]{border-color:var(--line2)}
-  summary{cursor:pointer;font-weight:640;font-size:15.5px;list-style:none;display:flex;justify-content:space-between;gap:16px}
-  summary::-webkit-details-marker{display:none}
-  summary::after{content:"+";color:var(--muted2);font-weight:400;font-size:20px;line-height:1}
-  details[open] summary::after{content:"–"}
-  details p{color:var(--muted);font-size:14.5px;margin-top:12px}
+/* ---------- faixa de números ---------- */
+.stats{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:1px;margin-top:64px;
+  background:var(--line);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;
+}
+.stats > div{background:linear-gradient(180deg,var(--surface),var(--bg2));padding:26px 24px;transition:background .35s}
+.stats > div:hover{background:var(--surface2)}
+.stats b{
+  display:block;font-size:clamp(24px,3vw,34px);font-weight:750;letter-spacing:-.04em;
+  font-variant-numeric:tabular-nums;color:var(--text);
+}
+.stats b em{font-style:normal;color:var(--accent);font-size:.62em;margin-left:2px}
+.stats small{display:block;color:var(--muted2);font-size:12.5px;margin-top:4px;letter-spacing:.01em}
+@media(max-width:800px){.stats{grid-template-columns:1fr 1fr}}
 
-  /* cta final */
-  .final{
-    border-radius:22px;padding:64px 40px;text-align:center;position:relative;overflow:hidden;
-    background:var(--surface);border:1px solid var(--line2);
-  }
-  .final h2{font-size:clamp(28px,4vw,46px);margin-bottom:16px}
-  .final p{color:var(--muted);max-width:56ch;margin:0 auto 28px}
-  .final .hero-actions{justify-content:center}
+/* ---------- seções ---------- */
+section{position:relative;padding:104px 0;counter-increment:sec}
+section::before{
+  content:counter(sec,decimal-leading-zero);position:absolute;right:26px;top:60px;
+  font-family:var(--mono);font-size:11px;letter-spacing:.18em;color:var(--muted2);opacity:.55;
+}
+body{counter-reset:sec}
+main > .hero ~ section::before{display:block}
+@media(max-width:900px){section::before{display:none}}
+.sec-head{max-width:730px;margin-bottom:50px}
+.sec-head h2{font-size:clamp(28px,3.7vw,46px);margin:18px 0 16px;letter-spacing:-.038em}
+.sec-head p{color:var(--muted);font-size:16.5px;line-height:1.66}
+.sec-head.center{margin-left:auto;margin-right:auto;text-align:center}
 
-  footer{border-top:1px solid var(--line);padding:44px 0 60px;color:var(--muted2);font-size:13.5px}
-  .foot{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;align-items:center}
-  .foot .links{display:flex;gap:20px;flex-wrap:wrap}
-  .foot a:hover{color:var(--text)}
+/* cartões com spotlight */
+.grid{display:grid;gap:14px;min-width:0}
+.grid > *{min-width:0}
+.g3{grid-template-columns:repeat(auto-fit,minmax(285px,1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(232px,1fr))}
+.card{
+  position:relative;background:linear-gradient(180deg,var(--surface),rgba(11,13,16,.7));
+  border:1px solid var(--line);border-radius:var(--radius);padding:26px;
+  overflow:hidden;isolation:isolate;
+  transition:transform .4s var(--ease),border-color .4s,background .4s;
+}
+.card::before{
+  content:"";position:absolute;inset:0;z-index:-1;opacity:0;transition:opacity .4s;
+  background:radial-gradient(340px circle at var(--mx,50%) var(--my,0%),rgba(53,211,159,.1),transparent 62%);
+}
+.card::after{
+  content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none;
+  background:radial-gradient(300px circle at var(--mx,50%) var(--my,0%),rgba(255,255,255,.09),transparent 60%);
+  opacity:0;transition:opacity .4s;
+}
+.card:hover{transform:translateY(-3px);border-color:var(--line2)}
+.card:hover::before,.card:hover::after{opacity:1}
+.card .ico{
+  width:40px;height:40px;border-radius:11px;display:grid;place-items:center;margin-bottom:18px;
+  background:linear-gradient(180deg,var(--surface2),var(--surface));border:1px solid var(--line2);
+  color:var(--muted);transition:color .35s,border-color .35s,transform .5s var(--ease);
+}
+.card:hover .ico{color:var(--accent);border-color:var(--accent-line);transform:translateY(-2px) scale(1.04)}
+.card .ico svg{width:21px;height:21px}
+.card h3{font-size:16.5px;margin-bottom:9px;letter-spacing:-.02em}
+.card p{color:var(--muted);font-size:14.3px;line-height:1.62}
+.card .tag{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.04em;color:var(--muted2);
+  margin-top:16px;display:block;padding-top:13px;border-top:1px solid var(--line);
+}
+.card.big{grid-column:span 2}
+@media(max-width:760px){.card.big{grid-column:span 1}}
+@media(max-width:820px){
+  .grid[style*="1fr 1fr"]{grid-template-columns:1fr !important}
+  .hero h1{font-size:clamp(36px,10vw,64px)}
+  section{padding:76px 0}
+  .final{padding:52px 22px}
+  .stats{border-radius:12px}
+}
 
-  /* reveal */
-  .reveal{opacity:0;transform:translateY(18px);transition:opacity .6s ease,transform .6s ease}
-  .reveal.in{opacity:1;transform:none}
+/* split */
+.split{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center}
+.split > *{min-width:0}
+.split.rev .txt{order:2}
+@media(max-width:920px){.split{grid-template-columns:1fr;gap:34px}.split.rev .txt{order:0}}
+.split h2{font-size:clamp(27px,3.3vw,40px);margin:16px 0 16px}
+.split p{color:var(--muted);font-size:16px}
+.feat-list{list-style:none;padding:0;margin:26px 0 0;display:grid;gap:13px}
+.feat-list li{display:flex;gap:11px;align-items:flex-start;font-size:14.6px;color:var(--text2)}
+.feat-list svg{width:18px;height:18px;flex:0 0 18px;color:var(--accent);margin-top:3px}
+.feat-list b{color:var(--text);font-weight:620}
+
+/* provedores / marquee */
+.marquee{
+  position:relative;overflow:hidden;margin-top:26px;min-width:0;max-width:100%;
+  mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);
+}
+.marquee-track{display:flex;gap:10px;width:max-content;animation:marquee 26s linear infinite}
+.marquee:hover .marquee-track{animation-play-state:paused}
+.pill{
+  font-size:12.5px;font-weight:580;padding:7px 14px;border-radius:999px;
+  border:1px solid var(--line2);background:var(--surface2);color:var(--text2);white-space:nowrap;
+}
+.pill.hot{border-color:var(--accent-line);color:var(--accent);background:var(--accent-soft)}
+
+/* codebox */
+.codebox{
+  min-width:0;max-width:100%;
+  background:#080a10;border:1px solid var(--line);border-radius:14px;overflow:hidden;
+  font-family:var(--mono);font-size:12.5px;line-height:1.8;
+  box-shadow:0 40px 90px -40px rgba(0,0,0,.9);
+}
+.codebox .top{display:flex;gap:6px;padding:11px 15px;border-bottom:1px solid var(--line);background:var(--surface2);align-items:center}
+.codebox .top i{width:9px;height:9px;border-radius:50%;background:#333845}
+.codebox .top span{margin-left:10px;color:var(--muted2);font-size:11px}
+.codebox .top .rec{width:7px;height:7px;border-radius:50%;background:var(--accent);margin-left:auto;animation:pulse 2s infinite}
+.codebox pre{margin:0;padding:18px;overflow-x:auto;max-width:100%;color:#c9d1e6;scrollbar-width:thin}
+.codebox pre span{display:inline}
+.k{color:#9fe8cd}.s{color:#eaeae6}.n{color:#35d39f}.c{color:#5c6267}
+
+/* formatos */
+.fmt{display:grid;grid-template-columns:repeat(auto-fit,minmax(152px,1fr));gap:10px}
+.fmt div{
+  position:relative;border:1px solid var(--line);border-radius:13px;padding:16px;background:var(--surface);
+  display:flex;flex-direction:column;gap:3px;overflow:hidden;
+  transition:transform .35s var(--ease),border-color .35s,background .35s;
+}
+.fmt div::after{
+  content:"";position:absolute;right:-24px;bottom:-24px;width:64px;height:64px;border-radius:50%;
+  background:radial-gradient(circle,var(--accent-soft),transparent 70%);opacity:0;transition:opacity .35s;
+}
+.fmt div:hover{transform:translateY(-3px);border-color:var(--line2);background:var(--surface2)}
+.fmt div:hover::after{opacity:1}
+.fmt b{font-size:14px;font-weight:640}
+.fmt small{color:var(--muted2);font-family:var(--mono);font-size:11px}
+
+/* passos */
+.steps{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(272px,1fr));counter-reset:s;position:relative}
+.step{
+  position:relative;padding:28px;border-radius:var(--radius);
+  border:1px solid var(--line);background:linear-gradient(180deg,var(--surface),rgba(11,13,16,.6));
+  transition:border-color .35s,transform .4s var(--ease);
+}
+.step:hover{border-color:var(--line2);transform:translateY(-2px)}
+.step::before{
+  counter-increment:s;content:counter(s,decimal-leading-zero);
+  font-family:var(--mono);font-size:11.5px;color:var(--accent);letter-spacing:.12em;
+  display:block;margin-bottom:14px;
+}
+.step::after{
+  content:"";position:absolute;left:28px;top:34px;width:0;height:1.5px;
+  background:linear-gradient(90deg,var(--accent),transparent);transition:width .6s var(--ease);
+}
+.step.in::after{width:42px}
+.step h3{font-size:16.5px;margin-bottom:9px}
+.step p{color:var(--muted);font-size:14.4px}
+
+/* downloads */
+.dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(258px,1fr));gap:14px}
+.dl-card{
+  position:relative;border:1px solid var(--line);border-radius:var(--radius);padding:26px;
+  background:linear-gradient(180deg,var(--surface),rgba(11,13,16,.6));overflow:hidden;
+  transition:border-color .35s,transform .4s var(--ease);
+}
+.dl-card::before{
+  content:"";position:absolute;inset:0;opacity:0;transition:opacity .4s;
+  background:radial-gradient(320px circle at var(--mx,50%) var(--my,0%),rgba(53,211,159,.09),transparent 65%);
+}
+.dl-card:hover{border-color:var(--line2);transform:translateY(-3px)}
+.dl-card:hover::before{opacity:1}
+.dl-card .os{display:flex;align-items:center;gap:10px;font-weight:700;font-size:16px;margin-bottom:5px}
+.dl-card .os svg{width:20px;height:20px;color:var(--text2)}
+.dl-card small{color:var(--muted2);font-family:var(--mono);font-size:11.5px;display:block;margin-bottom:18px}
+.dl-links{display:flex;flex-direction:column;gap:8px}
+.dl-links a{
+  display:flex;justify-content:space-between;align-items:center;gap:10px;
+  padding:11px 14px;border-radius:10px;background:var(--surface2);border:1px solid var(--line);
+  font-size:13.5px;font-weight:620;transition:background .25s,border-color .25s,transform .25s var(--ease);
+}
+.dl-links a:hover{background:var(--surface3);border-color:var(--line2);transform:translateX(2px)}
+.dl-links a span{color:var(--muted2);font-family:var(--mono);font-size:10.5px;font-weight:400}
+.dl-links a svg{width:14px;height:14px;color:var(--muted2);transition:transform .3s var(--ease),color .3s}
+.dl-links a:hover svg{transform:translateY(2px);color:var(--accent)}
+
+/* faq */
+details{
+  border:1px solid var(--line);border-radius:12px;background:var(--surface);margin-bottom:9px;
+  transition:border-color .3s,background .3s;overflow:hidden;
+}
+details:hover{border-color:var(--line2)}
+details[open]{border-color:var(--line2);background:var(--surface2)}
+summary{
+  cursor:pointer;font-weight:620;font-size:15.3px;list-style:none;
+  display:flex;justify-content:space-between;gap:16px;align-items:center;padding:18px 20px;
+}
+summary::-webkit-details-marker{display:none}
+summary::after{
+  content:"";width:11px;height:11px;flex:0 0 11px;
+  border-right:1.6px solid var(--muted2);border-bottom:1.6px solid var(--muted2);
+  transform:rotate(45deg) translateY(-2px);transition:transform .35s var(--ease),border-color .3s;
+}
+details[open] summary::after{transform:rotate(-135deg) translateY(-3px);border-color:var(--accent)}
+details p{color:var(--muted);font-size:14.4px;padding:0 20px 20px;line-height:1.66}
+details[open] p{animation:fadeIn .35s var(--ease-out)}
+
+/* cta final */
+.final{
+  position:relative;border-radius:22px;padding:72px 40px;text-align:center;overflow:hidden;
+  background:linear-gradient(180deg,var(--surface),var(--bg2));border:1px solid var(--line2);
+}
+.final::before{
+  content:"";position:absolute;width:680px;height:680px;left:50%;top:-460px;transform:translateX(-50%);
+  background:radial-gradient(circle,rgba(53,211,159,.16),transparent 62%);filter:blur(50px);
+  animation:breathe 9s ease-in-out infinite;
+}
+.final > *{position:relative;z-index:1}
+.final h2{font-size:clamp(28px,4.1vw,48px);margin:16px 0 18px;letter-spacing:-.04em}
+.final p{color:var(--muted);max-width:56ch;margin:0 auto 30px}
+.final .hero-actions{justify-content:center;margin-bottom:0}
+
+/* footer */
+footer{border-top:1px solid var(--line);padding:46px 0 64px;color:var(--muted2);font-size:13.5px;position:relative;z-index:1}
+.foot{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;align-items:center}
+.foot .links{display:flex;gap:20px;flex-wrap:wrap}
+.foot a{transition:color .25s}
+.foot a:hover{color:var(--text)}
+.foot .mark{background:var(--surface2);border:1px solid var(--line)}
+
+/* voltar ao topo */
+.to-top{
+  position:fixed;right:24px;bottom:24px;z-index:120;width:42px;height:42px;border-radius:12px;
+  display:grid;place-items:center;background:var(--surface2);border:1px solid var(--line2);
+  color:var(--text2);cursor:pointer;opacity:0;transform:translateY(12px);pointer-events:none;
+  transition:opacity .35s,transform .35s var(--ease),border-color .25s,color .25s;
+  box-shadow:0 18px 40px -18px rgba(0,0,0,.9);
+}
+.to-top.show{opacity:1;transform:none;pointer-events:auto}
+.to-top:hover{border-color:var(--line3);color:var(--accent);transform:translateY(-2px)}
+.to-top svg{width:17px;height:17px}
+
+/* ---------- animações de entrada ---------- */
+[data-anim]{opacity:0;will-change:transform,opacity}
+[data-anim="up"]{transform:translateY(26px)}
+[data-anim="scale"]{transform:scale(.965)}
+[data-anim="left"]{transform:translateX(-32px)}
+[data-anim="right"]{transform:translateX(32px)}
+[data-anim="blur"]{filter:blur(10px);transform:translateY(14px)}
+[data-anim].in{
+  opacity:1;transform:none;filter:none;
+  transition:opacity .85s var(--ease-out),transform .85s var(--ease-out),filter .85s var(--ease-out);
+  transition-delay:var(--d,0ms);
+}
+
+@keyframes wordIn{to{opacity:1;transform:none}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(53,211,159,.5)}70%{box-shadow:0 0 0 9px rgba(53,211,159,0)}100%{box-shadow:0 0 0 0 rgba(53,211,159,0)}}
+@keyframes sheen{0%{opacity:0;left:-40%}25%{opacity:.85}100%{opacity:0;left:120%}}
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+@keyframes drift1{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(40px,30px,0) scale(1.08)}}
+@keyframes drift2{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(-50px,40px,0) scale(1.1)}}
+@keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@keyframes shift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+@keyframes breathe{0%,100%{opacity:.7;transform:translateX(-50%) scale(1)}50%{opacity:1;transform:translateX(-50%) scale(1.12)}}
+@keyframes grow{from{transform:scaleX(0);transform-origin:left}to{transform:scaleX(1)}}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;scroll-behavior:auto !important}
+  [data-anim]{opacity:1;transform:none;filter:none}
+  .hero h1 .w{opacity:1;transform:none}
+}
 </style>
 </head>
 <body>
+
+<div class="scroll-progress" id="progress"></div>
 
 <header id="hdr">
   <div class="wrap">
@@ -206,8 +491,9 @@
       <a class="brand" href="#top" aria-label="Krevo">
         <img src="{{LOGO_WORD}}" alt="Krevo" />
       </a>
-      <div class="links">
+      <div class="links" id="navlinks">
         <a href="#recursos">Recursos</a>
+        <a href="#gravacao">Gravação</a>
         <a href="#agente">Agente de IA</a>
         <a href="#formatos">Formatos</a>
         <a href="#download">Download</a>
@@ -215,172 +501,218 @@
       </div>
       <div class="spacer"></div>
       <a class="star" href="https://github.com/Pedro21062014/krevo" target="_blank" rel="noreferrer">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.2.8-.6v-2c-3.2.7-3.9-1.5-3.9-1.5-.5-1.4-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.1.1 1.7 1.2 1.7 1.2 1 1.7 2.6 1.2 3.2.9.1-.7.4-1.2.7-1.5-2.6-.3-5.3-1.3-5.3-5.8 0-1.3.5-2.3 1.2-3.2-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2a11.5 11.5 0 016 0C17.9 4.3 19 4.6 19 4.6c.6 1.6.2 2.8.1 3.1.7.9 1.2 1.9 1.2 3.2 0 4.5-2.7 5.5-5.3 5.8.4.4.8 1.1.8 2.2v3.3c0 .4.2.7.8.6 4.6-1.5 7.9-5.8 7.9-10.9C23.5 5.7 18.3.5 12 .5z"/></svg>
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.2.8-.6v-2c-3.2.7-3.9-1.5-3.9-1.5-.5-1.4-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.1.1 1.7 1.2 1.7 1.2 1 1.7 2.6 1.2 3.2.9.1-.7.4-1.2.7-1.5-2.6-.3-5.3-1.3-5.3-5.8 0-1.3.5-2.3 1.2-3.2-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2a11.5 11.5 0 016 0C17.9 4.3 19 4.6 19 4.6c.6 1.6.2 2.8.1 3.1.7.9 1.2 1.9 1.2 3.2 0 4.5-2.7 5.5-5.3 5.8.4.4.8 1.1.8 2.2v3.3c0 .4.2.7.8.6 4.6-1.5 7.9-5.8 7.9-10.9C23.5 5.7 18.3.5 12 .5z"/></svg>
         Open source · MIT
       </a>
+      <span class="ver">v0.4.0</span>
       <div class="nav-cta">
-        <a class="btn primary" href="#download">Baixar grátis</a>
+        <a class="btn primary small" href="#download">Baixar grátis<span class="sheen"></span></a>
       </div>
     </nav>
   </div>
 </header>
 
 <main id="top">
+
+  <!-- ===================== HERO ===================== -->
   <div class="hero">
-    <div class="glow a"></div>
-    <div class="glow b"></div>
+    <div class="aurora"><i></i><i></i><i></i></div>
     <div class="wrap">
-      <span class="eyebrow">Novo · versão 0.4 · gravação de tela e criação por formato</span>
-      <h1>Crie tudo.<br /><span class="grad">Em um só lugar.</span></h1>
-      <p class="lede">
-        Krevo é o estúdio de design nativo que edita <b>PDF, apresentações, imagens, vídeo</b> e muito mais.
-        A tela inicial abre em menos de um segundo, o <b>agente de IA</b> já funciona <b>de graça, sem chave</b>
-        e o kit de edição tem formas, filtros, sombras, cantos, estilos de texto, redimensionamento e exportação em PNG.
+      <span class="eyebrow"><span class="live"></span>Novo · v0.4 · gravação de tela + criação por formato</span>
+
+      <h1>
+        <span class="line"><span class="w" style="animation-delay:.05s">Crie</span> <span class="w" style="animation-delay:.14s">tudo.</span></span>
+        <span class="line"><span class="w grad" style="animation-delay:.24s">Em</span> <span class="w grad" style="animation-delay:.30s">um</span> <span class="w grad" style="animation-delay:.36s">só</span> <span class="w grad" style="animation-delay:.42s">lugar.</span></span>
+      </h1>
+
+      <p class="lede" data-anim="up" style="--d:420ms">
+        Krevo é o estúdio de design nativo que edita <b>PDF, apresentações, imagens e vídeo</b> — e agora
+        <b>grava a sua tela</b> direto para o canvas. A tela inicial abre em menos de um segundo, o
+        <b>agente de IA</b> funciona <b>de graça, sem chave</b> e o kit de edição tem formas, filtros,
+        sombras, cantos, estilos de texto, redimensionamento e exportação em PNG 2×.
       </p>
-      <div class="hero-actions">
+
+      <div class="hero-actions" data-anim="up" style="--d:520ms">
         <a class="btn primary" href="#download">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 11l5 5 5-5"/><path d="M4 20h16"/></svg>
-          Baixar para Windows, macOS e Linux
+          Baixar<span class="sm-hide"> para Windows, macOS e Linux</span>
+          <span class="sheen"></span>
         </a>
         <a class="btn ghost" href="https://github.com/Pedro21062014/krevo" target="_blank" rel="noreferrer">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.2.8-.6v-2c-3.2.7-3.9-1.5-3.9-1.5-.5-1.4-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.1.1 1.7 1.2 1.7 1.2 1 1.7 2.6 1.2 3.2.9.1-.7.4-1.2.7-1.5-2.6-.3-5.3-1.3-5.3-5.8 0-1.3.5-2.3 1.2-3.2-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2a11.5 11.5 0 016 0C17.9 4.3 19 4.6 19 4.6c.6 1.6.2 2.8.1 3.1.7.9 1.2 1.9 1.2 3.2 0 4.5-2.7 5.5-5.3 5.8.4.4.8 1.1.8 2.2v3.3c0 .4.2.7.8.6 4.6-1.5 7.9-5.8 7.9-10.9C23.5 5.7 18.3.5 12 .5z"/></svg>
           Ver no GitHub
         </a>
       </div>
-      <div class="meta-row">
+
+      <div class="meta-row" data-anim="up" style="--d:600ms">
         <span><i class="dot"></i> IA grátis no primeiro uso, sem cadastro</span>
         <span>100% local: suas chaves ficam na sua máquina</span>
         <span>PDF vetorial em Rust, sem Chromium</span>
       </div>
 
-      <div class="shot reveal">
-        <div class="shot-bar"><i></i><i></i><i></i><span class="url">krevo · início</span></div>
-        <img src="{{HOME}}" alt="Tela inicial do Krevo com criar novo projeto, templates e busca de fotos" />
+      <div class="shot-wrap" data-anim="scale" style="--d:700ms">
+        <div class="shot tilt" data-tilt="5">
+          <div class="shot-bar"><i></i><i></i><i></i><span class="url">krevo · início</span></div>
+          <img src="{{HOME}}" alt="Tela inicial do Krevo com criar novo projeto, templates e busca de fotos" />
+        </div>
+        <div class="float-badge a">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.2" fill="currentColor" stroke="none"/></svg>
+          Gravando a tela
+        </div>
+        <div class="float-badge b">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/></svg>
+          PDF vetorial em 1 clique
+        </div>
+      </div>
+
+      <div class="stats" data-anim="up" style="--d:820ms">
+        <div><b data-count="8">0</b><small>instaladores por release</small></div>
+        <div><b data-count="0.9" data-decimals="1" data-em="s">0</b><small>para abrir o estúdio</small></div>
+        <div><b data-count="100" data-suffix="%">0</b><small>local · sem telemetria</small></div>
+        <div><b data-count="3" data-em="×">0</b><small>mais leve que o Electron</small></div>
       </div>
     </div>
   </div>
 
+  <!-- ===================== RECURSOS ===================== -->
   <section id="recursos">
     <div class="wrap">
-      <div class="sec-head reveal">
-        <span class="eyebrow">Um editor, todos os formatos</span>
-        <h2>O que você já sabe fazer,<br />só que num app 30× mais rápido.</h2>
+      <div class="sec-head" data-anim="up">
+        <span class="eyebrow plain">Recursos</span>
+        <h2>Um editor, todos os formatos.<br />Nenhum atrito.</h2>
         <p>Krevo roda em Rust + Tauri: abre em menos de um segundo, usa pouca memória e exporta PDF vetorial de verdade — com texto selecionável, não uma captura de tela.</p>
       </div>
+
       <div class="grid g3">
-        <div class="card reveal">
+        <div class="card" data-anim="up" style="--d:0ms">
           <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/><path d="M10 14h4M10 17h4"/></svg></div>
           <h3>Editar e gerar PDF</h3>
           <p>Importe um PDF existente e edite página por página, ou exporte qualquer projeto em PDF vetorial com tipografia nítida e texto copiável.</p>
           <span class="tag">printpdf · curvas · vetores</span>
         </div>
-        <div class="card reveal">
+        <div class="card" data-anim="up" style="--d:60ms">
           <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M9 21V9"/></svg></div>
           <h3>Apresentações</h3>
           <p>Slides em 16:9, 4:3 ou A4, com páginas reordenáveis, miniaturas instantâneas e templates de pitch, relatório e agenda.</p>
-          <span class="tag">multi-página · grid 12 colunas</span>
+          <span class="tag">multi-página · grid de 12 colunas</span>
         </div>
-        <div class="card reveal">
+        <div class="card" data-anim="up" style="--d:120ms">
           <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.5" cy="9.5" r="1.8"/><path d="M21 16l-5-5-6 6"/></svg></div>
           <h3>Imagens e composição</h3>
           <p>Arraste fotos para o canvas, corte com “cover”, aplique sombras, cantos, gradientes, ícones vetoriais e camadas com bloqueio.</p>
           <span class="tag">arrastar e soltar · camadas</span>
         </div>
-        <div class="card reveal">
-          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.4" fill="currentColor" stroke="none"/></svg></div>
-          <h3>Gravar tela e câmera</h3>
-          <p>Grave a tela inteira, uma janela, uma aba ou a webcam com microfone e áudio do sistema, câmera em bolha, contagem regressiva e pausa. Revise na prévia e insira direto no design — ou baixe o arquivo.</p>
+        <div class="card" data-anim="up" style="--d:0ms">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="14" height="12" rx="3"/><path d="M16.5 12l5-3v9l-5-3z"/></svg></div>
+          <h3>Vídeo sem travar</h3>
+          <p>Solte um vídeo e trate como elemento: capa, proporção e exportação do frame atual. Arquivos grandes entram como <code>blob:</code> — nada de base64 gigante na memória.</p>
+          <span class="tag">mp4 · webm · sem congelar</span>
+        </div>
+        <div class="card" data-anim="up" style="--d:60ms">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.2" fill="currentColor" stroke="none"/></svg></div>
+          <h3>Gravação de tela e câmera</h3>
+          <p>Tela inteira, janela, aba ou webcam — com microfone, áudio do sistema, câmera em bolha, contagem, pausa e prévia antes de inserir.</p>
           <span class="tag">⌘⇧R · webm · sem upload</span>
         </div>
-        <div class="card reveal">
-          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="18" rx="1.6"/><rect x="14" y="7" width="7" height="10" rx="1.6"/></svg></div>
-          <h3>Criar por tipo e formato</h3>
-          <p>Escolha primeiro o tipo de mídia — imagem, vídeo, apresentação, documento, impressão — e depois o formato (1:1, 4:5, 9:16, 16:9, A4, 4K, cartão). O projeto nasce com a mídia padrão na medida certa.</p>
-          <span class="tag">⌘N · em duas etapas</span>
-        </div>
-        <div class="card reveal">
-          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="14" height="12" rx="3"/><path d="M16.5 12l5-3v9l-5-3z"/></svg></div>
-          <h3>Vídeo e frames</h3>
-          <p>Solte um vídeo no canvas (ou grave na hora) e trate como elemento: capa, proporção e exportação do frame atual para virar thumb ou story. Arquivos grandes entram como <code>blob:</code> e não travam mais o editor.</p>
-          <span class="tag">mp4 · webm · frames</span>
-        </div>
-        <div class="card reveal">
+        <div class="card" data-anim="up" style="--d:120ms">
           <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M21 16l-5-5-6 6"/><circle cx="8.5" cy="9.5" r="1.6"/></svg></div>
           <h3>Fotos dentro de Elementos</h3>
-          <p>Nada de trocar de tela: as fotos ficam na mesma aba de formas, ícones e gradientes. Busque no Unsplash com a sua Access Key ou use o acervo local — um clique insere no design atual.</p>
+          <p>Nada de trocar de tela: as fotos ficam na mesma aba de formas, ícones e gradientes. Busque no Unsplash com a sua Access Key ou use o acervo local.</p>
           <span class="tag">um clique · sem perder o projeto</span>
         </div>
-        <div class="card reveal">
+        <div class="card" data-anim="up" style="--d:0ms">
           <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></svg></div>
           <h3>Elementos prontos</h3>
-          <p>Biblioteca de 25 ícones vetoriais, 10 gradientes, 8 paletas curadas e 10 templates. Clique e já está no canvas.</p>
+          <p>Biblioteca com 25 ícones vetoriais, 12 formas extras, 10 gradientes, 8 paletas curadas, 8 estilos de texto e 10 templates. Clique e já está no canvas.</p>
           <span class="tag">ícones · paletas · templates</span>
         </div>
-        <div class="card reveal">
-          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="7" height="7" rx="1.6"/><rect x="14" y="4" width="7" height="7" rx="1.6"/><rect x="3" y="14" width="7" height="7" rx="1.6"/><rect x="14" y="14" width="7" height="7" rx="1.6"/></svg></div>
-          <h3>Tela inicial leve</h3>
-          <p>Skeleton loaders, projetos recentes com miniatura real, criar em branco por formato e um briefing que já vira design.</p>
-          <span class="tag">skeleton · recentes</span>
-        </div>
-        <div class="card reveal">
-          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 7H5V3"/><path d="M5.5 7a8 8 0 113.2 12"/></svg></div>
-          <h3>Atalhos e menu de contexto</h3>
-          <p>Botão direito abre tudo do elemento (duplicar, ordem, bloquear, ocultar, excluir) e <code>?</code> mostra a lista completa de atalhos. Histórico de 80 estados, guias e snap magnético.</p>
-          <span class="tag">botão direito · ? · ⌘Z</span>
-        </div>
-        <div class="card reveal">
+        <div class="card" data-anim="up" style="--d:60ms">
           <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17M3.5 12h17"/></svg></div>
           <h3>Ajustes de imagem</h3>
           <p>Brilho, contraste, saturação, P&amp;B e desfoque com sliders ao vivo, mais 8 filtros prontos, espelhar na horizontal/vertical e cantos arredondados.</p>
           <span class="tag">filtros · espelho · cantos</span>
         </div>
-        <div class="card reveal">
-          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 21V12"/></svg></div>
-          <h3>Formas e estilos de texto</h3>
-          <p>Triângulo, estrela, seta, balão, hexágono, losango, explosão e mais 5 formas; 8 combinações de tipografia prontas e sombras em um clique.</p>
-          <span class="tag">12 formas extras · 8 estilos</span>
-        </div>
-        <div class="card reveal">
-          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></div>
-          <h3>Redimensionar e exportar</h3>
-          <p>Troque o formato da página (16:9, A4, 1:1, 9:16, banner…) mantendo tudo proporcional, e baixe a arte em <b>PNG 2×</b> ou PDF vetorial.</p>
-          <span class="tag">magic resize · png 2× · pdf</span>
-        </div>
-        <div class="card reveal">
-          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V9M10 20V4M16 20v-7M22 20H2"/></svg></div>
-          <h3>Leve em qualquer máquina</h3>
-          <p>Instaladores nativos: <code>.exe</code>, <code>.msi</code>, <code>.deb</code>, <code>.AppImage</code> e <code>.dmg</code> gerados automaticamente pelo GitHub Actions.</p>
-          <span class="tag">tauri · 8 MB · sem electron</span>
+        <div class="card" data-anim="up" style="--d:120ms">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 7H5V3"/><path d="M5.5 7a8 8 0 113.2 12"/></svg></div>
+          <h3>Atalhos e menu de contexto</h3>
+          <p>Botão direito abre tudo do elemento e <code>?</code> mostra a lista completa. Histórico de 80 estados, guias e snap magnético.</p>
+          <span class="tag">botão direito · ? · ⌘Z</span>
         </div>
       </div>
     </div>
   </section>
 
-  <section id="agente" style="padding-top:20px">
-    <div class="wrap split">
-      <div class="reveal">
-        <span class="eyebrow">Agente de IA</span>
-        <h2 style="font-size:clamp(28px,3.6vw,42px);margin:16px 0 14px">Seu diretor de arte,<br />funcionando de verdade.</h2>
-        <p style="color:var(--muted);font-size:16.5px">
-          Descreva o que precisa e o agente desenha. Ele recebe o grid da página, a margem segura, a paleta
-          da marca e o seu briefing — e devolve um <b>plano de design em JSON</b>, não código. O Krevo
-          aplica no canvas e você segue editando com mouse e teclado.
-        </p>
-        <div class="providers">
-          <span class="pill">Grátis, sem chave</span><span class="pill">OpenAI</span><span class="pill">Anthropic</span>
-          <span class="pill">Gemini</span><span class="pill">OpenRouter</span><span class="pill">Groq</span>
-          <span class="pill">DeepSeek</span><span class="pill">Mistral</span><span class="pill">Ollama (local)</span>
-          <span class="pill">Endpoint custom</span>
+  <!-- ===================== GRAVAÇÃO ===================== -->
+  <section id="gravacao" style="padding-top:20px">
+    <div class="wrap">
+      <div class="split">
+        <div class="txt" data-anim="left">
+          <span class="eyebrow">Novo na 0.4</span>
+          <h2>Grave a tela<br />e jogue direto no design.</h2>
+          <p>Um estúdio de gravação dentro do editor: escolha a fonte, a qualidade e o que entra no áudio. O arquivo nunca sai da sua máquina — e entra no canvas pelo mesmo caminho de um vídeo importado, então não trava.</p>
+          <ul class="feat-list">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><span><b>Tela inteira, janela, aba ou câmera</b> — qualidade de 720p 24 fps a 4K.</span></li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><span><b>Microfone + áudio do sistema</b> num único stream, com câmera em bolha opcional.</span></li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><span><b>Contagem, pausa e prévia</b> com duração, resolução e tamanho antes de aprovar.</span></li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><span><b>Inserir no design ou baixar</b> — dois cliques, nenhum upload.</span></li>
+          </ul>
         </div>
-        <p style="color:var(--muted2);font-size:13.5px;margin-top:20px">
-          Por padrão o Krevo usa o provedor gratuito <b>Pollinations</b>: nada de chave, nada de cadastro
-          (ele libera uma resposta a cada ~30 s). Para uso intenso, cole a sua chave — ela fica no
-          armazenamento local e viaja direto do seu computador para o provedor, sem servidor nosso.
-        </p>
+        <div class="shot tilt" data-tilt="7" data-anim="right">
+          <div class="shot-bar"><i></i><i></i><i></i><span class="url">krevo · gravar (⌘⇧R)</span></div>
+          <img src="{{RECORD}}" alt="Estúdio de gravação do Krevo com fonte, qualidade, microfone e câmera em bolha" />
+        </div>
       </div>
-      <div class="reveal">
-        <div class="codebox">
-          <div class="top"><i></i><i></i><i></i><span>agente krevo → plano de design</span></div>
+    </div>
+  </section>
+
+  <!-- ===================== CRIAÇÃO ===================== -->
+  <section style="padding-top:20px">
+    <div class="wrap">
+      <div class="split rev">
+        <div class="txt" data-anim="right">
+          <span class="eyebrow">Criar em duas etapas</span>
+          <h2>Primeiro a mídia.<br />Depois o formato.</h2>
+          <p>Imagem, vídeo, apresentação, documento, impressão ou um tamanho só seu — e então o formato exato em pixels. O projeto já nasce com a mídia padrão definida e a última escolha é lembrada.</p>
+          <ul class="feat-list">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><span><b>Seis famílias de mídia</b> com presets prontos: 1:1, 4:5, 9:16, 16:9, A4, 4K, cartão.</span></li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><span><b>Tamanho próprio</b> com largura e altura livres e presets de proporção.</span></li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><span><b>Nada de tela branca</b>: toda página abre com arte de fundo e paleta sóbria.</span></li>
+          </ul>
+        </div>
+        <div class="shot tilt" data-tilt="7" data-anim="left">
+          <div class="shot-bar"><i></i><i></i><i></i><span class="url">krevo · criar (⌘N)</span></div>
+          <img src="{{CREATE}}" alt="Diálogo de criação do Krevo: tipo de mídia à esquerda e formato à direita" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== AGENTE ===================== -->
+  <section id="agente">
+    <div class="wrap">
+      <div class="split">
+        <div class="txt" data-anim="left">
+          <span class="eyebrow">Agente de IA</span>
+          <h2>Descreva o design.<br />Ele monta no canvas.</h2>
+          <p>O agente lê o briefing, escolhe paleta e tipografia, desenha os elementos e devolve um projeto editável — não uma imagem. Funciona <b>de graça e sem chave</b>; se você quiser mais potência, conecte a sua própria API.</p>
+          <div class="marquee" aria-hidden="true">
+            <div class="marquee-track" id="marquee">
+              <span class="pill hot">Grátis, sem chave</span>
+              <span class="pill">OpenAI</span>
+              <span class="pill">Claude</span>
+              <span class="pill">Gemini</span>
+              <span class="pill">Groq</span>
+              <span class="pill">DeepSeek</span>
+              <span class="pill">Mistral</span>
+              <span class="pill">OpenRouter</span>
+              <span class="pill">Ollama local</span>
+              <span class="pill">Sua chave, seu custo</span>
+            </div>
+          </div>
+        </div>
+        <div data-anim="right">
+          <div class="codebox">
+            <div class="top"><i></i><i></i><i></i><span>agente krevo → plano de design</span><span class="rec"></span></div>
 <pre><span class="c">// você escreve</span>
 <span class="s">"post de lançamento para um app de finanças pessoais"</span>
 
@@ -398,32 +730,64 @@
     { <span class="k">"type"</span>: <span class="s">"image"</span>, <span class="k">"src"</span>: <span class="s">"unsplash:finance"</span> }
   ]
 }</pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="shot tilt" data-tilt="4" data-anim="up" style="margin-top:56px">
+        <div class="shot-bar"><i></i><i></i><i></i><span class="url">krevo · editor + agente de IA</span></div>
+        <img src="{{AGENT}}" alt="Editor do Krevo ao lado do painel do agente de IA aplicando um design no canvas" />
+      </div>
+
+      <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:14px" data-anim="up">
+        <div class="shot tilt" data-tilt="5">
+          <div class="shot-bar"><i></i><i></i><i></i><span class="url">krevo · ajustes do agente</span></div>
+          <img src="{{AI}}" alt="Tela de configuração do agente de IA no Krevo: provedor, chave, modelo e teste de conexão" />
+        </div>
+        <div class="shot tilt" data-tilt="5">
+          <div class="shot-bar"><i></i><i></i><i></i><span class="url">krevo · atalhos (?)</span></div>
+          <img src="{{SHORTCUTS}}" alt="Painel de atalhos do Krevo com todas as combinações de teclado" />
         </div>
       </div>
     </div>
   </section>
 
-  <section style="padding-top:0">
+  <!-- ===================== EDITOR / SHOWCASE ===================== -->
+  <section style="padding-top:20px">
     <div class="wrap">
-      <div class="shot reveal">
-        <div class="shot-bar"><i></i><i></i><i></i><span class="url">krevo · editor + agente de IA</span></div>
-        <img src="{{AGENT}}" alt="Editor do Krevo ao lado do painel do agente de IA aplicando um design no canvas" />
+      <div class="sec-head" data-anim="up">
+        <span class="eyebrow plain">Por dentro</span>
+        <h2>Denso onde importa,<br />silencioso no resto.</h2>
+        <p>Canvas com zoom e pan, camadas, páginas, inspetor completo e menu de contexto. A interface fala baixo para o seu design falar alto.</p>
       </div>
-      <div class="shot reveal" style="margin-top:22px">
-        <div class="shot-bar"><i></i><i></i><i></i><span class="url">krevo · ajustes do agente</span></div>
-        <img src="{{AI}}" alt="Tela de configuração do agente de IA no Krevo: provedor, chave, modelo e teste de conexão" />
+
+      <div class="shot tilt" data-tilt="4" data-anim="up">
+        <div class="shot-bar"><i></i><i></i><i></i><span class="url">krevo · editor</span></div>
+        <img src="{{EDITOR}}" alt="Editor do Krevo com canvas, camadas, páginas e inspetor de propriedades" />
+      </div>
+
+      <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:14px">
+        <div class="shot tilt" data-tilt="5" data-anim="left">
+          <div class="shot-bar"><i></i><i></i><i></i><span class="url">krevo · botão direito</span></div>
+          <img src="{{MENU}}" alt="Menu de contexto do Krevo com duplicar, ordem, bloquear, ocultar e excluir" />
+        </div>
+        <div class="shot tilt" data-tilt="5" data-anim="right">
+          <div class="shot-bar"><i></i><i></i><i></i><span class="url">krevo · elementos e fotos</span></div>
+          <img src="{{ELEMENTS}}" alt="Aba de elementos do Krevo com formas, gradientes, ícones e fotos para inserir no design" />
+        </div>
       </div>
     </div>
   </section>
 
+  <!-- ===================== FORMATOS ===================== -->
   <section id="formatos" style="padding-top:20px">
     <div class="wrap">
-      <div class="sec-head reveal">
-        <span class="eyebrow">Formatos</span>
+      <div class="sec-head" data-anim="up">
+        <span class="eyebrow plain">Formatos</span>
         <h2>Um projeto para cada ideia</h2>
         <p>Páginas em pixels reais, prontas para impressão ou tela. Crie quantas quiser dentro do mesmo arquivo <code>.krevo</code>.</p>
       </div>
-      <div class="fmt reveal">
+      <div class="fmt" data-anim="up">
         <div><b>Apresentação</b><small>1920 × 1080</small></div>
         <div><b>Slide 1280</b><small>1280 × 720</small></div>
         <div><b>Documento A4</b><small>794 × 1123</small></div>
@@ -436,136 +800,110 @@
         <div><b>Capa</b><small>1600 × 900</small></div>
       </div>
 
-      <div class="sec-head reveal" style="margin-top:70px">
-        <span class="eyebrow">Templates</span>
+      <div class="sec-head" data-anim="up" style="margin-top:78px">
+        <span class="eyebrow plain">Templates</span>
         <h2>Comece com um modelo,<br />não com uma tela branca.</h2>
       </div>
       <div class="grid g4">
-        <div class="card reveal"><h3>Pitch · Aurora</h3><p>Capa de apresentação escura com tipografia grande.</p><span class="tag">apresentação</span></div>
-        <div class="card reveal"><h3>Slide · Agenda</h3><p>Agenda de reunião com blocos numerados.</p><span class="tag">apresentação</span></div>
-        <div class="card reveal"><h3>Post · Lançamento</h3><p>Social escuro com círculos de cor e chamada.</p><span class="tag">social</span></div>
-        <div class="card reveal"><h3>Story · Promoção</h3><p>1080×1920 com preço grande e CTA.</p><span class="tag">social</span></div>
-        <div class="card reveal"><h3>Relatório A4</h3><p>Documento com resumo, métricas e fio da marca.</p><span class="tag">documento</span></div>
-        <div class="card reveal"><h3>Currículo minimal</h3><p>Duas colunas, tipografia limpa. Exporte em PDF.</p><span class="tag">documento</span></div>
-        <div class="card reveal"><h3>Banner LinkedIn</h3><p>1200×628 com botão e chamada de e-book.</p><span class="tag">marketing</span></div>
-        <div class="card reveal"><h3>Certificado</h3><p>Moldura dourada pronta para imprimir em A4.</p><span class="tag">documento</span></div>
-      </div>
-
-      <div class="shot reveal" style="margin-top:70px">
-        <div class="shot-bar"><i></i><i></i><i></i><span class="url">krevo · editor</span></div>
-        <img src="{{EDITOR}}" alt="Editor do Krevo com canvas, camadas, páginas e inspetor de propriedades" />
-      </div>
-
-      <div class="grid g2-shots reveal" style="margin-top:22px;grid-template-columns:1fr 1fr">
-        <div class="shot" style="margin-top:0">
-          <div class="shot-bar"><i></i><i></i><i></i><span class="url">krevo · criar (⌘N)</span></div>
-          <img src="{{CREATE}}" alt="Diálogo de criação do Krevo: tipo de mídia à esquerda e formato à direita" />
-        </div>
-        <div class="shot" style="margin-top:0">
-          <div class="shot-bar"><i></i><i></i><i></i><span class="url">krevo · gravar (⌘⇧R)</span></div>
-          <img src="{{RECORD}}" alt="Estúdio de gravação do Krevo com fonte, qualidade, microfone e câmera em bolha" />
-        </div>
-      </div>
-
-      <div class="grid g2-shots reveal" style="margin-top:22px;grid-template-columns:1fr 1fr">
-        <div class="shot" style="margin-top:0">
-          <div class="shot-bar"><i></i><i></i><i></i><span class="url">krevo · botão direito</span></div>
-          <img src="{{MENU}}" alt="Menu de contexto do Krevo com duplicar, ordem, bloquear, ocultar e excluir" />
-        </div>
-        <div class="shot" style="margin-top:0">
-          <div class="shot-bar"><i></i><i></i><i></i><span class="url">krevo · atalhos (?)</span></div>
-          <img src="{{SHORTCUTS}}" alt="Painel de atalhos do Krevo com todas as combinações de teclado" />
-        </div>
-      </div>
-
-      <div class="shot reveal" style="margin-top:22px">
-        <div class="shot-bar"><i></i><i></i><i></i><span class="url">krevo · elementos e fotos</span></div>
-        <img src="{{ELEMENTS}}" alt="Aba de elementos do Krevo com formas, gradientes, ícones e fotos para inserir no design" />
+        <div class="card" data-anim="up" style="--d:0ms"><h3>Pitch · Aurora</h3><p>Capa de apresentação escura com tipografia grande.</p><span class="tag">apresentação</span></div>
+        <div class="card" data-anim="up" style="--d:50ms"><h3>Slide · Agenda</h3><p>Agenda de reunião com blocos numerados.</p><span class="tag">apresentação</span></div>
+        <div class="card" data-anim="up" style="--d:100ms"><h3>Post · Lançamento</h3><p>Social escuro com círculos de cor e chamada.</p><span class="tag">social</span></div>
+        <div class="card" data-anim="up" style="--d:150ms"><h3>Story · Promoção</h3><p>1080×1920 com preço grande e CTA.</p><span class="tag">social</span></div>
+        <div class="card" data-anim="up" style="--d:0ms"><h3>Relatório A4</h3><p>Documento com resumo, métricas e fio da marca.</p><span class="tag">documento</span></div>
+        <div class="card" data-anim="up" style="--d:50ms"><h3>Currículo minimal</h3><p>Duas colunas, tipografia limpa. Exporte em PDF.</p><span class="tag">documento</span></div>
+        <div class="card" data-anim="up" style="--d:100ms"><h3>Banner LinkedIn</h3><p>1200×628 com botão e chamada de e-book.</p><span class="tag">marketing</span></div>
+        <div class="card" data-anim="up" style="--d:150ms"><h3>Certificado</h3><p>Moldura dourada pronta para imprimir em A4.</p><span class="tag">documento</span></div>
       </div>
     </div>
   </section>
 
-  <section>
+  <!-- ===================== COMO FUNCIONA ===================== -->
+  <section style="padding-top:20px">
     <div class="wrap">
-      <div class="sec-head reveal">
-        <span class="eyebrow">Como funciona</span>
+      <div class="sec-head" data-anim="up">
+        <span class="eyebrow plain">Como funciona</span>
         <h2>Três passos, zero fricção</h2>
       </div>
       <div class="steps">
-        <div class="step reveal">
-          <h3>Escolha o formato ou o template</h3>
-          <p>Todo projeto novo já nasce com uma mídia de fundo definida e uma paleta sóbria — nada de tela em branco. Escolha o formato, escreva o briefing ou comece por um template.</p>
+        <div class="step" data-anim="up" style="--d:0ms">
+          <h3>Escolha a mídia e o formato</h3>
+          <p>Todo projeto novo já nasce com uma mídia de fundo definida e uma paleta sóbria — nada de tela em branco. Escolha o tipo, o formato, escreva o briefing ou comece por um template.</p>
         </div>
-        <div class="step reveal">
+        <div class="step" data-anim="up" style="--d:90ms">
           <h3>Peça ao agente (ou faça na mão)</h3>
           <p>Descreva o design e deixe a IA montar o primeiro rascunho. Depois arraste (fluido, sem piscar), edite o texto com duplo clique e ajuste cada propriedade.</p>
         </div>
-        <div class="step reveal">
+        <div class="step" data-anim="up" style="--d:180ms">
           <h3>Exporte e pronto</h3>
-          <p>PDF vetorial pelo motor Rust, <b>PNG em 2×</b> direto do navegador ou o arquivo <code>.krevo</code> para continuar depois — tudo offline.</p>
+          <p>PDF vetorial pelo motor Rust, <b>PNG em 2×</b> direto do canvas ou o arquivo <code>.krevo</code> para continuar depois — tudo offline.</p>
         </div>
       </div>
     </div>
   </section>
 
-  <section id="download">
+  <!-- ===================== DOWNLOAD ===================== -->
+  <section id="download" style="padding-top:20px">
     <div class="wrap">
-      <div class="sec-head reveal">
-        <span class="eyebrow">Download</span>
+      <div class="sec-head" data-anim="up">
+        <span class="eyebrow plain">Download</span>
         <h2>Grátis, aberto e seu.</h2>
         <p>Os instaladores são gerados automaticamente pelo GitHub Actions a cada release. Escolha o seu sistema:</p>
       </div>
       <div class="dl">
-        <div class="dl-card reveal">
+        <div class="dl-card" data-anim="up" style="--d:0ms">
           <div class="os">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5.5l8-1.1v7.1H3zM12 4.3l9-1.3v8.5h-9zM3 12.5h8v7.1L3 18.5zM12 12.5h9v8.5l-9-1.3z"/></svg>
             Windows
           </div>
-          <small>Windows 10/11 · x64 · 3,4 MB</small>
+          <small>Windows 10/11 · x64 · 3,5 MB</small>
           <div class="dl-links">
-            <a href="https://github.com/Pedro21062014/krevo/releases/latest/download/Krevo_0.4.0_x64-setup.exe">Instalador <span>.exe · NSIS</span></a>
-            <a href="https://github.com/Pedro21062014/krevo/releases/latest/download/Krevo_0.4.0_x64_en-US.msi">Pacote MSI <span>.msi</span></a>
+            <a href="https://github.com/Pedro21062014/krevo/releases/latest/download/Krevo_0.4.0_x64-setup.exe">Instalador <span>.exe · NSIS</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12M7 11l5 5 5-5"/><path d="M5 20h14"/></svg></a>
+            <a href="https://github.com/Pedro21062014/krevo/releases/latest/download/Krevo_0.4.0_x64_en-US.msi">Pacote MSI <span>.msi</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12M7 11l5 5 5-5"/><path d="M5 20h14"/></svg></a>
           </div>
         </div>
-        <div class="dl-card reveal">
+        <div class="dl-card" data-anim="up" style="--d:70ms">
           <div class="os">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c2.6 0 4.6 2.2 4.6 4.9 0 2.1-1.3 3.9-3.2 4.6.1 1.9.9 3.6 2.2 4.9-1 .8-2.3 1.3-3.6 1.3s-2.6-.5-3.6-1.3c1.3-1.3 2.1-3 2.2-4.9-1.9-.7-3.2-2.5-3.2-4.6C7.4 4.2 9.4 2 12 2zM4.6 9.9c1.1.4 1.8 1.5 1.8 2.7 0 1.3-.8 2.4-2 2.7-.2-.5-.3-1-.3-1.6 0-1 .2-2 .5-2.9v-.9zm14.8 0c.3.9.5 1.9.5 2.9 0 .6-.1 1.1-.3 1.6-1.2-.3-2-1.4-2-2.7 0-1.2.7-2.3 1.8-2.7v.9z"/></svg>
             macOS
           </div>
           <small>macOS 10.15+ · binário universal</small>
           <div class="dl-links">
-            <a href="https://github.com/Pedro21062014/krevo/releases/latest/download/Krevo_0.4.0_universal.dmg">Universal (Intel + M1–M5) <span>.dmg · 9 MB</span></a>
+            <a href="https://github.com/Pedro21062014/krevo/releases/latest/download/Krevo_0.4.0_universal.dmg">Universal (Intel + M1–M5) <span>.dmg · 8,5 MB</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12M7 11l5 5 5-5"/><path d="M5 20h14"/></svg></a>
           </div>
         </div>
-        <div class="dl-card reveal">
+        <div class="dl-card" data-anim="up" style="--d:140ms">
           <div class="os">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.6 17.3c-.1-.1-2.4-1.4-2.4-4.3 0-2.5 1.9-3.7 2-3.8-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.1-2.8.9-3.5.9s-1.8-.8-3-.8c-1.5 0-3 .9-3.8 2.3-1.6 2.8-.4 6.9 1.2 9.2.8 1.1 1.7 2.3 2.9 2.3 1.2 0 1.6-.7 3-.7s1.8.7 3 .7 2-1.1 2.8-2.2c.9-1.2 1.2-2.4 1.2-2.4s-2.2-1-2.2-3.5zM18.3 5.4c.6-.8 1-1.9.9-3-1 0-2.2.7-2.9 1.5-.6.7-1.1 1.8-.9 2.9 1.1.1 2.2-.6 2.9-1.4z"/></svg>
             Linux
           </div>
           <small>Debian/Ubuntu · qualquer distro · 4,9 MB</small>
           <div class="dl-links">
-            <a href="https://github.com/Pedro21062014/krevo/releases/latest/download/Krevo_0.4.0_amd64.deb">Debian / Ubuntu <span>.deb</span></a>
-            <a href="https://github.com/Pedro21062014/krevo/releases/latest/download/Krevo_0.4.0_amd64.AppImage">Portátil <span>.AppImage</span></a>
+            <a href="https://github.com/Pedro21062014/krevo/releases/latest/download/Krevo_0.4.0_amd64.deb">Debian / Ubuntu <span>.deb</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12M7 11l5 5 5-5"/><path d="M5 20h14"/></svg></a>
+            <a href="https://github.com/Pedro21062014/krevo/releases/latest/download/Krevo_0.4.0_amd64.AppImage">Portátil <span>.AppImage</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12M7 11l5 5 5-5"/><path d="M5 20h14"/></svg></a>
           </div>
         </div>
       </div>
-      <p style="color:var(--muted2);font-size:13px;margin-top:18px">
-        Prefere compilar? <code style="font-family:var(--mono)">git clone</code>, <code style="font-family:var(--mono)">npm install</code>,
-        <code style="font-family:var(--mono)">cargo tauri build</code>. Requer Rust estável e Node 20+.
+      <p style="color:var(--muted2);font-size:13px;margin-top:20px" data-anim="up">
+        Prefere compilar? <code>git clone</code>, <code>npm install</code>, <code>cargo tauri build</code>. Requer Rust estável e Node 20+.
       </p>
     </div>
   </section>
 
+  <!-- ===================== FAQ ===================== -->
   <section id="faq" style="padding-top:20px">
     <div class="wrap">
-      <div class="sec-head reveal">
-        <span class="eyebrow">Perguntas frequentes</span>
+      <div class="sec-head" data-anim="up">
+        <span class="eyebrow plain">Perguntas frequentes</span>
         <h2>Tudo que costumam perguntar</h2>
       </div>
-      <div class="reveal">
+      <div data-anim="up">
         <details open>
           <summary>Preciso pagar para usar a IA?</summary>
           <p>Não. O Krevo já sai funcionando com um provedor gratuito e sem chave: você abre o app, escreve o briefing e o design aparece no canvas. Se quiser mais velocidade ou modelos melhores, conecte a sua própria chave (OpenAI, Claude, Gemini, Groq, DeepSeek, Mistral, OpenRouter) e pague só o que consumir — ou use o Ollama local, de graça e offline.</p>
+        </details>
+        <details>
+          <summary>Como funciona a gravação de tela?</summary>
+          <p>Aperte <code>⌘⇧R</code> no editor. Escolha a fonte (tela inteira, janela, aba ou câmera), a qualidade e o áudio; o sistema pede permissão e a gravação começa com a contagem que você escolher. Ao parar, você revisa o vídeo com duração, resolução e tamanho e decide: inserir no design ou baixar o arquivo. Nenhum frame sai da sua máquina.</p>
         </details>
         <details>
           <summary>Minha chave de API fica segura?</summary>
@@ -580,8 +918,8 @@
           <p>Você importa o PDF e cada página vira uma página editável do projeto (30 páginas por arquivo), onde é possível reposicionar, recolorir, sobrepor textos e imagens — e exportar de volta em PDF.</p>
         </details>
         <details>
-          <summary>Consigo colocar vídeo no design?</summary>
-          <p>Sim: arraste um arquivo ou use a ferramenta de vídeo. O arquivo é lido como <i>blob</i> local — nada de base64 gigante na memória, então o app não trava nem com vídeos grandes. Se o sistema não tiver o codec, o Krevo mostra um cartão com o nome do arquivo em vez de tentar decodificar e travar.</p>
+          <summary>Vídeos grandes travam o app?</summary>
+          <p>Não. O arquivo é lido como <i>blob</i> local — nada de base64 gigante na memória —, então o editor segue fluido. Se o sistema não tiver o codec, o Krevo mostra um cartão com o nome do arquivo em vez de tentar decodificar e travar.</p>
         </details>
         <details>
           <summary>Quais recursos de edição existem?</summary>
@@ -603,14 +941,17 @@
     </div>
   </section>
 
-  <section style="padding-top:10px">
+  <!-- ===================== CTA ===================== -->
+  <section style="padding-top:10px;padding-bottom:96px">
     <div class="wrap">
-      <div class="final reveal">
+      <div class="final" data-anim="scale">
         <span class="eyebrow">Pronto em 30 segundos</span>
-        <h2 style="margin-top:16px">Sua próxima ideia<br />não precisa de tela branca.</h2>
-        <p>Baixe o Krevo, cole a sua chave de IA e transforme o próximo briefing em design — no seu computador, no seu ritmo.</p>
+        <h2>Sua próxima ideia<br />não precisa de tela branca.</h2>
+        <p>Baixe o Krevo, escreva o briefing e transforme a próxima ideia em design — no seu computador, no seu ritmo.</p>
         <div class="hero-actions">
-          <a class="btn primary" href="https://github.com/Pedro21062014/krevo/releases/latest" target="_blank" rel="noreferrer">Baixar o Krevo</a>
+          <a class="btn primary" href="https://github.com/Pedro21062014/krevo/releases/latest" target="_blank" rel="noreferrer">
+            Baixar o Krevo<span class="sheen"></span>
+          </a>
           <a class="btn ghost" href="https://github.com/Pedro21062014/krevo" target="_blank" rel="noreferrer">Ver o código</a>
         </div>
       </div>
@@ -622,10 +963,11 @@
   <div class="wrap foot">
     <div style="display:flex;align-items:center;gap:12px">
       <span class="mark"><img src="{{LOGO_K}}" alt="" /></span>
-      <span><b style="color:var(--text)">Krevo</b> · © 2026 · Licença MIT</span>
+      <span><b style="color:var(--text)">Krevo</b> · © 2026 · Licença MIT · v0.4.0</span>
     </div>
     <div class="links">
       <a href="#recursos">Recursos</a>
+      <a href="#gravacao">Gravação</a>
       <a href="#agente">IA</a>
       <a href="#download">Download</a>
       <a href="https://github.com/Pedro21062014/krevo" target="_blank" rel="noreferrer">GitHub</a>
@@ -634,14 +976,160 @@
   </div>
 </footer>
 
-<script>
-  const hdr = document.getElementById('hdr');
-  addEventListener('scroll', () => hdr.classList.toggle('scrolled', scrollY > 8), { passive: true });
+<button class="to-top" id="totop" aria-label="Voltar ao topo">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V5M6 11l6-6 6 6"/></svg>
+</button>
 
+<script>
+(() => {
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- progresso + header + botão topo ---------- */
+  const hdr = document.getElementById('hdr');
+  const bar = document.getElementById('progress');
+  const totop = document.getElementById('totop');
+  const onScroll = () => {
+    const y = scrollY;
+    hdr.classList.toggle('scrolled', y > 8);
+    totop.classList.toggle('show', y > 900);
+    const max = document.documentElement.scrollHeight - innerHeight;
+    bar.style.width = max > 0 ? (y / max) * 100 + '%' : '0%';
+  };
+  addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+  totop.addEventListener('click', () => scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' }));
+
+  /* ---------- reveal escalonado ---------- */
   const io = new IntersectionObserver((entries) => {
-    for (const e of entries) if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
-  }, { threshold: 0.12 });
-  document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+    for (const e of entries) {
+      if (!e.isIntersecting) continue;
+      e.target.classList.add('in');
+      io.unobserve(e.target);
+    }
+  }, { threshold: 0.14, rootMargin: '0px 0px -8% 0px' });
+  document.querySelectorAll('[data-anim]').forEach((el) => io.observe(el));
+
+  /* ---------- link ativo na nav ---------- */
+  const links = [...document.querySelectorAll('#navlinks a')];
+  const sections = links
+    .map((a) => document.querySelector(a.getAttribute('href')))
+    .filter(Boolean);
+  const navIO = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (!e.isIntersecting) continue;
+      links.forEach((a) => a.classList.toggle('active', a.getAttribute('href') === '#' + e.target.id));
+    }
+  }, { threshold: 0.01, rootMargin: '-45% 0px -50% 0px' });
+  sections.forEach((s) => navIO.observe(s));
+
+  /* ---------- spotlight nos cartões e botões ---------- */
+  const track = (el) => {
+    el.addEventListener('pointermove', (e) => {
+      const r = el.getBoundingClientRect();
+      el.style.setProperty('--mx', ((e.clientX - r.left) / r.width) * 100 + '%');
+      el.style.setProperty('--my', ((e.clientY - r.top) / r.height) * 100 + '%');
+    });
+  };
+  document.querySelectorAll('.card, .dl-card, .btn').forEach(track);
+
+  /* ---------- tilt 3D nas capturas ---------- */
+  if (!reduce) {
+    document.querySelectorAll('[data-tilt]').forEach((el) => {
+      const max = Number(el.dataset.tilt || 5);
+      let raf = 0;
+      el.addEventListener('pointermove', (e) => {
+        if (e.pointerType === 'touch') return;
+        const r = el.getBoundingClientRect();
+        const px = (e.clientX - r.left) / r.width - 0.5;
+        const py = (e.clientY - r.top) / r.height - 0.5;
+        cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(() => {
+          el.style.transform = `perspective(1400px) rotateY(${px * max}deg) rotateX(${-py * max}deg) translateY(-3px)`;
+          el.style.boxShadow = '0 70px 140px -50px rgba(0,0,0,.95)';
+        });
+      });
+      el.addEventListener('pointerleave', () => {
+        cancelAnimationFrame(raf);
+        el.style.transform = '';
+        el.style.boxShadow = '';
+      });
+    });
+  }
+
+  /* ---------- parallax suave nos glows do hero ---------- */
+  if (!reduce) {
+    const glows = [...document.querySelectorAll('.aurora i')];
+    let ticking = false;
+    addEventListener('scroll', () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const y = Math.min(scrollY, 900);
+        glows.forEach((g, i) => {
+          g.style.marginTop = -y * (0.08 + i * 0.05) + 'px';
+        });
+        ticking = false;
+      });
+    }, { passive: true });
+  }
+
+  /* ---------- contadores ---------- */
+  const animateCount = (el) => {
+    const target = Number(el.dataset.count || 0);
+    const decimals = Number(el.dataset.decimals || 0);
+    const suffix = el.dataset.suffix || '';
+    const duration = 1200;
+    const start = performance.now();
+    const em = el.dataset.em || '';
+    const paint = (value) => {
+      el.textContent = value + suffix;
+      if (em) {
+        const tag = document.createElement('em');
+        tag.textContent = em;
+        el.appendChild(tag);
+      }
+    };
+    const step = (now) => {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      paint((target * eased).toFixed(decimals).replace('.', ','));
+      if (t < 1) requestAnimationFrame(step);
+      else paint(target.toFixed(decimals).replace('.', ','));
+    };
+    requestAnimationFrame(step);
+  };
+  const countIO = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (!e.isIntersecting) continue;
+      animateCount(e.target);
+      countIO.unobserve(e.target);
+    }
+  }, { threshold: 0.6 });
+  document.querySelectorAll('[data-count]').forEach((el) => countIO.observe(el));
+
+  /* ---------- marquee infinito ---------- */
+  const mq = document.querySelector('.marquee-track');
+  if (mq) mq.innerHTML += mq.innerHTML;
+
+  /* ---------- acordeão: fecha os outros ---------- */
+  const all = [...document.querySelectorAll('details')];
+  all.forEach((d) => d.addEventListener('toggle', () => {
+    if (d.open) all.forEach((o) => { if (o !== d) o.open = false; });
+  }));
+
+  /* ---------- âncoras com offset suave ---------- */
+  document.querySelectorAll('a[href^="#"]').forEach((a) => {
+    a.addEventListener('click', (e) => {
+      const id = a.getAttribute('href');
+      if (id.length < 2) return;
+      const target = document.querySelector(id);
+      if (!target) return;
+      e.preventDefault();
+      const top = target.getBoundingClientRect().top + scrollY - 82;
+      scrollTo({ top, behavior: reduce ? 'auto' : 'smooth' });
+    });
+  });
+})();
 </script>
 </body>
 </html>
