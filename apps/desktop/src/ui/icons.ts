@@ -1,0 +1,50 @@
+/** Ícones da interface (SVG inline, traço 1.7). */
+
+const wrap = (path: string, size = 18): string =>
+  `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`;
+
+export const icons = {
+  logo: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3v18"/><path d="M18 4L7.5 13.5 18 21"/></svg>`,
+  home: wrap('<path d="M3 11l9-8 9 8"/><path d="M6 10v10h12V10"/>'),
+  template: wrap('<rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M9 21V9"/>'),
+  elements: wrap('<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 21V12"/>'),
+  photo: wrap('<rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.5" cy="9.5" r="1.8"/><path d="M21 16l-5-5-6 6"/>'),
+  sparkles: wrap('<path d="M12 3l1.8 4.9L19 10l-5.2 2.1L12 17l-1.8-4.9L5 10l5.2-2.1z"/><path d="M18.5 15.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z"/>'),
+  settings: wrap('<circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-2.9 1.2 2 2 0 11-4 0 1.7 1.7 0 00-2.9-1.2l-.1.1a2 2 0 11-2.8-2.8l.1-.1A1.7 1.7 0 003.2 15a2 2 0 110-4 1.7 1.7 0 001.2-2.9l-.1-.1a2 2 0 112.8-2.8l.1.1A1.7 1.7 0 0010 4.2a2 2 0 114 0 1.7 1.7 0 002.9 1.2l.1-.1a2 2 0 112.8 2.8l-.1.1A1.7 1.7 0 0020.8 11a2 2 0 110 4z"/>'),
+  plus: wrap('<path d="M12 5v14M5 12h14"/>'),
+  text: wrap('<path d="M4 6V4h16v2M12 4v16M8 20h8"/>'),
+  square: wrap('<rect x="4" y="4" width="16" height="16" rx="2.5"/>'),
+  circle: wrap('<circle cx="12" cy="12" r="8.5"/>'),
+  line: wrap('<path d="M4 19L20 5"/>'),
+  image: wrap('<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M21 16l-5-5-6 6"/><circle cx="8.5" cy="9.5" r="1.6"/>'),
+  video: wrap('<rect x="2.5" y="6" width="14" height="12" rx="3"/><path d="M16.5 12l5-3v9l-5-3z"/>'),
+  undo: wrap('<path d="M9 7H5V3"/><path d="M5.5 7a8 8 0 113.2 12"/>'),
+  redo: wrap('<path d="M15 7h4V3"/><path d="M18.5 7a8 8 0 10-3.2 12"/>'),
+  download: wrap('<path d="M12 3v12M7 11l5 5 5-5"/><path d="M4 20h16"/>'),
+  play: wrap('<path d="M7 4l13 8-13 8z"/>'),
+  trash: wrap('<path d="M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14"/>'),
+  eye: wrap('<path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="2.6"/>'),
+  eyeOff: wrap('<path d="M4 4l16 16"/><path d="M9.7 5.3A10.5 10.5 0 0112 5c6.4 0 10 6 10 6a17 17 0 01-3 3.6M6.3 7.9A17 17 0 002 11s3.6 6 10 6a10 10 0 003.6-.7"/>'),
+  lock: wrap('<rect x="5" y="10" width="14" height="10" rx="2.5"/><path d="M8.5 10V7a3.5 3.5 0 017 0v3"/>'),
+  unlock: wrap('<rect x="5" y="10" width="14" height="10" rx="2.5"/><path d="M8.5 10V7a3.5 3.5 0 016.5-1.7"/>'),
+  back: wrap('<path d="M15 5l-7 7 7 7"/>'),
+  more: wrap('<circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/>'),
+  copy: wrap('<rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M15 5.5A2.5 2.5 0 0012.5 3H6.5A2.5 2.5 0 004 5.5v6A2.5 2.5 0 006.5 14"/>'),
+  layers: wrap('<path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/>'),
+  grid: wrap('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>'),
+  align: wrap('<path d="M4 4v16M9 8h11M9 16h7"/>'),
+  key: wrap('<circle cx="8" cy="15" r="4"/><path d="M11 12l8-8 3 3-3 3-2-2-3 3"/>'),
+  send: wrap('<path d="M4 12l16-8-6 16-2.5-6.5z"/>'),
+  check: wrap('<path d="M20 6L9 17l-5-5"/>'),
+  close: wrap('<path d="M6 6l12 12M18 6L6 18"/>'),
+  zoomIn: wrap('<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5M11 8v6M8 11h6"/>'),
+  zoomOut: wrap('<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5M8 11h6"/>'),
+  fit: wrap('<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>'),
+  pdf: wrap('<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/><path d="M10 14h4M10 17h4"/>'),
+  refresh: wrap('<path d="M20 11a8 8 0 10-2.3 6.3"/><path d="M20 4v7h-7"/>'),
+  stars: wrap('<path d="M12 4l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/>'),
+  cursor: wrap('<path d="M5 3l14 8-6 1.6L10 20z"/>'),
+  hand: wrap('<path d="M8 12V6.5a1.5 1.5 0 013 0V11M11 11V5.5a1.5 1.5 0 013 0V11M14 11V7.5a1.5 1.5 0 013 0V14a6 6 0 01-6 6h-1a6 6 0 01-6-6v-2.5a1.5 1.5 0 013 0"/>'),
+};
+
+export type IconName = keyof typeof icons;
