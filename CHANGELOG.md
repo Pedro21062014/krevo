@@ -4,6 +4,16 @@ Todas as mudanças importantes do Krevo ficam neste arquivo.
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 versionamento semântico.
 
+## [0.1.1] — 2026-10-23
+
+### Mudado
+
+- macOS agora sai em **binário universal** (`Krevo_0.1.1_universal.dmg`), cobrindo
+  Intel e Apple Silicon em um único instalador.
+- CI: permissão `contents: write` para publicar o Release, testes do núcleo sem
+  dependências gráficas e `apt` não interativo nos builders Linux.
+- Ícones `.ico` (Windows) e `.icns` (macOS) adicionados ao bundle.
+
 ## [0.1.0] — 2026-10-23
 
 ### Adicionado
