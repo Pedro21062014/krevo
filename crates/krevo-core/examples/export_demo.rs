@@ -56,6 +56,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 color: node.color.clone().unwrap_or_else(|| "#FFFFFF".into()),
                 italic: false,
                 underline: false,
+                uppercase: false,
             });
         }
         cover.elements.push(el);
@@ -100,7 +101,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             color: "#1A1714".into(),
             italic: false,
             underline: false,
-        }),
+                uppercase: false,
+            }),
         src: None,
         fit: None,
     });
@@ -131,7 +133,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             color: "#3A342C".into(),
             italic: false,
             underline: false,
-        }),
+                uppercase: false,
+            }),
         src: None,
         fit: None,
     });
