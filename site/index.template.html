@@ -76,19 +76,13 @@ code{font-family:var(--mono);font-size:.9em;color:var(--text2);background:var(--
 .wrap{max-width:var(--max);margin:0 auto;padding:0 26px}
 
 /* ---------- barra de progresso ---------- */
-.scroll-progress{
-  position:fixed;top:0;left:0;height:2px;width:0;z-index:200;
-  background:linear-gradient(90deg,rgba(53,211,159,0),var(--accent));
-  box-shadow:0 0 12px rgba(53,211,159,.5);transition:width .1s linear;
-}
-
 /* ---------- eyebrow / botões ---------- */
 .eyebrow{
   display:inline-flex;align-items:center;gap:9px;font-size:11px;font-weight:650;
   letter-spacing:.14em;text-transform:uppercase;color:var(--text2);
-  background:var(--surface);
+  background:linear-gradient(180deg,var(--surface),var(--surface2));
   border:1px solid var(--line2);padding:6px 13px;border-radius:999px;
-  box-shadow:0 1px 2px rgba(12,14,17,.04);
+  box-shadow:0 1px 2px rgba(12,14,17,.05);
   backdrop-filter:blur(8px);
 }
 .eyebrow .live{
@@ -114,10 +108,19 @@ code{font-family:var(--mono);font-size:.9em;color:var(--text2);background:var(--
 }
 .btn:hover::after{opacity:1}
 .btn.primary{
-  background:var(--text);border-color:transparent;color:var(--bg);
-  box-shadow:0 12px 30px -16px rgba(12,14,17,.45);
+  background:linear-gradient(180deg,#23262b,#0b0c0e);
+  border-color:transparent;color:#fff;
+  box-shadow:0 14px 30px -16px rgba(12,14,17,.5),inset 0 1px 0 rgba(255,255,255,.14);
 }
-.btn.primary:hover{opacity:.9;box-shadow:0 18px 40px -16px rgba(12,14,17,.5)}
+.btn.primary:hover{
+  background:linear-gradient(180deg,#2b2f35,#141619);
+  box-shadow:0 20px 42px -18px rgba(12,14,17,.55),inset 0 1px 0 rgba(255,255,255,.18);
+}
+html[data-theme="dark"] .btn.primary{
+  background:linear-gradient(180deg,#ffffff,#e6e6e1);color:#0b0c0e;
+  box-shadow:0 14px 32px -18px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.6);
+}
+html[data-theme="dark"] .btn.primary:hover{background:linear-gradient(180deg,#fff,#f2f2ee)}
 .btn.primary::after{background:radial-gradient(220px circle at var(--mx,50%) var(--my,50%),rgba(53,211,159,.55),transparent 60%)}
 .btn.ghost{background:var(--surface)}
 .btn.small{height:40px;padding:0 17px;font-size:14px}
@@ -181,7 +184,22 @@ html[data-theme="dark"] .theme-btn .sun{display:none}
 @media(max-width:1080px){nav .links{display:none}.star{display:none}}
 
 /* ---------- hero ---------- */
-.hero{position:relative;padding:92px 0 24px;overflow:hidden}
+.hero{position:relative;padding:92px 0 24px;overflow:hidden;isolation:isolate}
+/* malha de gradientes do topo (tema claro) */
+.hero::before{
+  content:"";position:absolute;inset:-30% -15% auto -15%;height:135%;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(52% 42% at 12% 6%,rgba(53,211,159,.28),transparent 72%),
+    radial-gradient(46% 38% at 88% 2%,rgba(96,127,255,.16),transparent 74%),
+    radial-gradient(40% 30% at 62% 22%,rgba(232,182,76,.12),transparent 78%),
+    linear-gradient(180deg,rgba(255,255,255,.9),rgba(247,247,244,0) 62%);
+}
+html[data-theme="dark"] .hero::before{
+  background:
+    radial-gradient(52% 42% at 12% 6%,rgba(53,211,159,.16),transparent 72%),
+    radial-gradient(46% 38% at 88% 2%,rgba(96,127,255,.12),transparent 74%),
+    linear-gradient(180deg,rgba(8,9,11,.4),transparent 62%);
+}
 .aurora{position:absolute;inset:0;pointer-events:none;overflow:hidden}
 .aurora i{position:absolute;display:block;border-radius:50%;filter:blur(90px)}
 .aurora i:nth-child(1){
@@ -254,15 +272,25 @@ html[data-theme="dark"] .theme-btn .sun{display:none}
 
 /* ---------- faixa de números ---------- */
 .stats{
-  display:grid;grid-template-columns:repeat(4,1fr);gap:1px;margin-top:64px;
+  position:relative;display:grid;grid-template-columns:repeat(4,1fr);gap:1px;margin-top:64px;
   background:var(--line);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;
+}
+.stats::after{
+  content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  padding:1px;
+  background:linear-gradient(120deg,rgba(53,211,159,.5),transparent 30%,transparent 70%,rgba(96,127,255,.35));
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude;
 }
 .stats > div{background:var(--surface);padding:26px 24px;transition:background .35s}
 .stats > div:hover{background:var(--surface2)}
 .stats b{
   display:block;font-size:clamp(24px,3vw,34px);font-weight:750;letter-spacing:-.04em;
-  font-variant-numeric:tabular-nums;color:var(--text);
+  font-variant-numeric:tabular-nums;
+  background:linear-gradient(180deg,var(--text),color-mix(in srgb,var(--text) 48%,var(--accent)));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
 }
+.stats b em{-webkit-text-fill-color:var(--accent);color:var(--accent)}
 .stats b em{font-style:normal;color:var(--accent);font-size:.62em;margin-left:2px}
 .stats small{display:block;color:var(--muted2);font-size:12.5px;margin-top:4px;letter-spacing:.01em}
 @media(max-width:800px){.stats{grid-template-columns:1fr 1fr}}
@@ -277,7 +305,16 @@ body{counter-reset:sec}
 main > .hero ~ section::before{display:block}
 @media(max-width:900px){section::before{display:none}}
 .sec-head{max-width:730px;margin-bottom:50px}
-.sec-head h2{font-size:clamp(28px,3.7vw,46px);margin:18px 0 16px;letter-spacing:-.038em}
+.sec-head h2{
+  font-size:clamp(28px,3.7vw,46px);margin:18px 0 16px;letter-spacing:-.038em;
+  background:linear-gradient(170deg,var(--text) 30%,color-mix(in srgb,var(--text) 62%,var(--accent)));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.sec-head h2::after{
+  content:"";display:block;width:56px;height:2px;margin-top:22px;border-radius:2px;
+  background:linear-gradient(90deg,var(--accent),rgba(53,211,159,0));
+}
+.sec-head.center h2::after{margin-left:auto;margin-right:auto;background:linear-gradient(90deg,rgba(53,211,159,0),var(--accent),rgba(53,211,159,0))}
 .sec-head p{color:var(--muted);font-size:16.5px;line-height:1.66}
 .sec-head.center{margin-left:auto;margin-right:auto;text-align:center}
 
@@ -308,7 +345,10 @@ main > .hero ~ section::before{display:block}
   background:linear-gradient(180deg,var(--surface2),var(--surface));border:1px solid var(--line2);
   color:var(--muted);transition:color .35s,border-color .35s,transform .5s var(--ease);
 }
-.card:hover .ico{color:var(--accent);border-color:var(--accent-line);transform:translateY(-2px) scale(1.04)}
+.card:hover .ico{
+  color:var(--accent);border-color:var(--accent-line);transform:translateY(-2px) scale(1.04);
+  background:linear-gradient(160deg,var(--accent-soft),var(--surface2));
+}
 .card .ico svg{width:21px;height:21px}
 .card h3{font-size:16.5px;margin-bottom:9px;letter-spacing:-.02em}
 .card p{color:var(--muted);font-size:14.3px;line-height:1.62}
@@ -459,7 +499,10 @@ details[open] p{animation:fadeIn .35s var(--ease-out)}
 }
 .final::before{
   content:"";position:absolute;width:680px;height:680px;left:50%;top:-460px;transform:translateX(-50%);
-  background:radial-gradient(circle,rgba(53,211,159,.26),transparent 62%);filter:blur(50px);
+  background:
+    radial-gradient(circle at 50% 0%,rgba(53,211,159,.34),transparent 60%),
+    radial-gradient(circle at 18% 100%,rgba(96,127,255,.18),transparent 58%);
+  filter:blur(50px);
   animation:breathe 9s ease-in-out infinite;
 }
 .final > *{position:relative;z-index:1}
@@ -536,9 +579,24 @@ footer{border-top:1px solid var(--line);padding:46px 0 64px;color:var(--muted2);
 .scene-count b{color:var(--accent);font-weight:600}
 .scene-tabs{display:flex;gap:6px;margin-bottom:26px;flex-wrap:wrap}
 .scene-tab{
-  position:relative;padding:7px 13px;border-radius:999px;font-size:12.5px;font-weight:600;
+  position:relative;display:inline-flex;align-items:center;gap:7px;
+  padding:7px 13px;border-radius:999px;font-size:12.5px;font-weight:600;
   border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;
   transition:color .3s,border-color .3s,background .3s;
+}
+.scene-tab b{
+  font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.08em;
+  color:var(--muted2);transition:color .3s;
+}
+.scene-tab.active b{color:var(--accent)}
+.scene-tab.done{border-color:var(--accent-line)}
+.scene-tab.done b::after{content:"✓";margin-left:3px}
+.scene-hint{
+  margin:22px 0 0;font-size:11.5px;color:var(--muted2);
+  display:flex;align-items:center;gap:7px;
+}
+.scene-hint::before{
+  content:"";width:22px;height:1px;background:linear-gradient(90deg,var(--accent),transparent);
 }
 .scene-tab:hover{color:var(--text);border-color:var(--line2)}
 .scene-tab.active{color:var(--accent);border-color:var(--accent-line);background:var(--accent-soft)}
@@ -552,12 +610,14 @@ footer{border-top:1px solid var(--line);padding:46px 0 64px;color:var(--muted2);
 .scene-pane.in-anim p{animation:sceneIn .55s .06s var(--ease-out) both}
 .scene-pane.in-anim ul{animation:sceneIn .55s .12s var(--ease-out) both}
 
-.scene-progress{
-  margin-top:28px;height:3px;border-radius:3px;background:var(--line);overflow:hidden;max-width:260px;
-}
-.scene-progress i{display:block;height:100%;width:0;background:var(--accent);border-radius:3px;transition:width .4s var(--ease)}
 
 .scene-stage{position:relative;height:min(62vh,520px);perspective:1600px}
+.scene-stage::before{
+  content:"";position:absolute;inset:-14% -6%;z-index:-1;pointer-events:none;border-radius:50%;
+  background:radial-gradient(closest-side,rgba(53,211,159,.22),transparent 72%);
+  filter:blur(26px);
+}
+html[data-theme="dark"] .scene-stage::before{background:radial-gradient(closest-side,rgba(53,211,159,.14),transparent 72%)}
 .scene-frame{
   position:absolute;inset:0;border-radius:16px;overflow:hidden;
   background:var(--surface);border:1px solid var(--line2);box-shadow:var(--shot-shadow);
@@ -591,7 +651,6 @@ footer{border-top:1px solid var(--line);padding:46px 0 64px;color:var(--muted2);
   .scene-tabs{display:none}
   .scene-frame{position:relative;opacity:1;transform:none;display:none}
   .scene-frame.active{display:flex}
-  .scene-progress{display:none}
   .scene-pane[hidden]{display:none}
 }
 
@@ -604,8 +663,6 @@ footer{border-top:1px solid var(--line);padding:46px 0 64px;color:var(--muted2);
 </head>
 <body>
 
-<div class="scroll-progress" id="progress"></div>
-
 <header id="hdr">
   <div class="wrap">
     <nav>
@@ -616,7 +673,6 @@ footer{border-top:1px solid var(--line);padding:46px 0 64px;color:var(--muted2);
       <div class="links" id="navlinks">
         <a href="#recursos">Recursos</a>
         <a href="#tour">Tour</a>
-        <a href="#gravacao">Gravação</a>
         <a href="#agente">Agente de IA</a>
         <a href="#formatos">Formatos</a>
         <a href="#download">Download</a>
@@ -778,12 +834,11 @@ footer{border-top:1px solid var(--line);padding:46px 0 64px;color:var(--muted2);
           <div class="scene-copy">
             <div class="scene-kicker">
               <span class="eyebrow plain">Tour rápido</span>
-              <span class="scene-count"><b id="scene-now">01</b> / 03</span>
             </div>
             <div class="scene-tabs" id="scene-tabs">
-              <button class="scene-tab active" data-scene="0">Criar</button>
-              <button class="scene-tab" data-scene="1">Gravar</button>
-              <button class="scene-tab" data-scene="2">Agente de IA</button>
+              <button class="scene-tab active" data-scene="0"><b>01</b>Criar</button>
+              <button class="scene-tab" data-scene="1"><b>02</b>Gravar</button>
+              <button class="scene-tab" data-scene="2"><b>03</b>Agente de IA</button>
             </div>
 
             <div class="scene-pane in-anim" data-scene-pane="0">
@@ -816,7 +871,7 @@ footer{border-top:1px solid var(--line);padding:46px 0 64px;color:var(--muted2);
               </ul>
             </div>
 
-            <div class="scene-progress"><i id="scene-bar"></i></div>
+            <p class="scene-hint">Role a página e a tela acompanha — ou clique em um passo.</p>
           </div>
 
           <div class="scene-stage" id="scene-stage">
@@ -836,51 +891,6 @@ footer{border-top:1px solid var(--line);padding:46px 0 64px;color:var(--muted2);
               <span class="scene-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 4l1.8 4.9L19 10l-5.2 2.1L12 17l-1.8-4.9L5 10l5.2-2.1z"/></svg>Agente de IA</span>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===================== GRAVAÇÃO ===================== -->
-  <section id="gravacao" style="padding-top:20px">
-    <div class="wrap">
-      <div class="split">
-        <div class="txt" data-anim="left">
-          <span class="eyebrow">Novo na 0.4</span>
-          <h2>Grave a tela<br />e jogue direto no design.</h2>
-          <p>Um estúdio de gravação dentro do editor: escolha a fonte, a qualidade e o que entra no áudio. O arquivo nunca sai da sua máquina — e entra no canvas pelo mesmo caminho de um vídeo importado, então não trava.</p>
-          <ul class="feat-list">
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><span><b>Tela inteira, janela, aba ou câmera</b> — qualidade de 720p 24 fps a 4K.</span></li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><span><b>Microfone + áudio do sistema</b> num único stream, com câmera em bolha opcional.</span></li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><span><b>Contagem, pausa e prévia</b> com duração, resolução e tamanho antes de aprovar.</span></li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><span><b>Inserir no design ou baixar</b> — dois cliques, nenhum upload.</span></li>
-          </ul>
-        </div>
-        <div class="shot tilt" data-tilt="7" data-anim="right">
-          <div class="shot-bar"><i></i><i></i><i></i><span class="url">krevo · gravar (⌘⇧R)</span></div>
-          <img src="{{RECORD}}" alt="Estúdio de gravação do Krevo com fonte, qualidade, microfone e câmera em bolha" />
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===================== CRIAÇÃO ===================== -->
-  <section style="padding-top:20px">
-    <div class="wrap">
-      <div class="split rev">
-        <div class="txt" data-anim="right">
-          <span class="eyebrow">Criar em duas etapas</span>
-          <h2>Primeiro a mídia.<br />Depois o formato.</h2>
-          <p>Imagem, vídeo, apresentação, documento, impressão ou um tamanho só seu — e então o formato exato em pixels. O projeto já nasce com a mídia padrão definida e a última escolha é lembrada.</p>
-          <ul class="feat-list">
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><span><b>Seis famílias de mídia</b> com presets prontos: 1:1, 4:5, 9:16, 16:9, A4, 4K, cartão.</span></li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><span><b>Tamanho próprio</b> com largura e altura livres e presets de proporção.</span></li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><span><b>Nada de tela branca</b>: toda página abre com arte de fundo e paleta sóbria.</span></li>
-          </ul>
-        </div>
-        <div class="shot tilt" data-tilt="7" data-anim="left">
-          <div class="shot-bar"><i></i><i></i><i></i><span class="url">krevo · criar (⌘N)</span></div>
-          <img src="{{CREATE}}" alt="Diálogo de criação do Krevo: tipo de mídia à esquerda e formato à direita" />
         </div>
       </div>
     </div>
@@ -933,21 +943,6 @@ footer{border-top:1px solid var(--line);padding:46px 0 64px;color:var(--muted2);
         </div>
       </div>
 
-      <div class="shot tilt" data-tilt="4" data-anim="up" style="margin-top:56px">
-        <div class="shot-bar"><i></i><i></i><i></i><span class="url">krevo · editor + agente de IA</span></div>
-        <img src="{{AGENT}}" alt="Editor do Krevo ao lado do painel do agente de IA aplicando um design no canvas" />
-      </div>
-
-      <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:14px" data-anim="up">
-        <div class="shot tilt" data-tilt="5">
-          <div class="shot-bar"><i></i><i></i><i></i><span class="url">krevo · ajustes do agente</span></div>
-          <img src="{{AI}}" alt="Tela de configuração do agente de IA no Krevo: provedor, chave, modelo e teste de conexão" />
-        </div>
-        <div class="shot tilt" data-tilt="5">
-          <div class="shot-bar"><i></i><i></i><i></i><span class="url">krevo · atalhos (?)</span></div>
-          <img src="{{SHORTCUTS}}" alt="Painel de atalhos do Krevo com todas as combinações de teclado" />
-        </div>
-      </div>
     </div>
   </section>
 
@@ -973,6 +968,14 @@ footer{border-top:1px solid var(--line);padding:46px 0 64px;color:var(--muted2);
         <div class="shot tilt" data-tilt="5" data-anim="right">
           <div class="shot-bar"><i></i><i></i><i></i><span class="url">krevo · elementos e fotos</span></div>
           <img src="{{ELEMENTS}}" alt="Aba de elementos do Krevo com formas, gradientes, ícones e fotos para inserir no design" />
+        </div>
+        <div class="shot tilt" data-tilt="5" data-anim="left">
+          <div class="shot-bar"><i></i><i></i><i></i><span class="url">krevo · ajustes do agente</span></div>
+          <img src="{{AI}}" alt="Tela de configuração do agente de IA no Krevo: provedor, chave, modelo e teste de conexão" />
+        </div>
+        <div class="shot tilt" data-tilt="5" data-anim="right">
+          <div class="shot-bar"><i></i><i></i><i></i><span class="url">krevo · atalhos (?)</span></div>
+          <img src="{{SHORTCUTS}}" alt="Painel de atalhos do Krevo com todas as combinações de teclado" />
         </div>
       </div>
     </div>
@@ -1166,7 +1169,7 @@ footer{border-top:1px solid var(--line);padding:46px 0 64px;color:var(--muted2);
     </div>
     <div class="links">
       <a href="#recursos">Recursos</a>
-      <a href="#gravacao">Gravação</a>
+      <a href="#tour">Tour</a>
       <a href="#agente">IA</a>
       <a href="#download">Download</a>
       <a href="https://github.com/Pedro21062014/krevo" target="_blank" rel="noreferrer">GitHub</a>
@@ -1202,14 +1205,12 @@ footer{border-top:1px solid var(--line);padding:46px 0 64px;color:var(--muted2);
 
   /* ---------- progresso + header + botão topo ---------- */
   const hdr = document.getElementById('hdr');
-  const progressBar = document.getElementById('progress');
   const totop = document.getElementById('totop');
   const onScroll = () => {
     const y = scrollY;
     hdr.classList.toggle('scrolled', y > 8);
     totop.classList.toggle('show', y > 900);
     const max = document.documentElement.scrollHeight - innerHeight;
-    progressBar.style.width = max > 0 ? (y / max) * 100 + '%' : '0%';
   };
   addEventListener('scroll', onScroll, { passive: true });
   onScroll();
@@ -1329,8 +1330,6 @@ footer{border-top:1px solid var(--line);padding:46px 0 64px;color:var(--muted2);
   const frames = [...document.querySelectorAll('[data-scene-frame]')];
   const panes = [...document.querySelectorAll('[data-scene-pane]')];
   const tabs = [...document.querySelectorAll('.scene-tab')];
-  const bar = document.getElementById('scene-bar');
-  const now = document.getElementById('scene-now');
   const stage = document.getElementById('scene-stage');
   let sceneActive = -1;
   let lockUntil = 0;
@@ -1343,8 +1342,10 @@ footer{border-top:1px solid var(--line);padding:46px 0 64px;color:var(--muted2);
       p.hidden = k !== i;
       p.classList.toggle('in-anim', k === i);
     });
-    tabs.forEach((t, k) => t.classList.toggle('active', k === i));
-    if (now) now.textContent = String(i + 1).padStart(2, '0');
+    tabs.forEach((t, k) => {
+      t.classList.toggle('active', k === i);
+      t.classList.toggle('done', k < i);
+    });
   };
 
   // clique nas abas: leva o scroll até a parte correspondente da cena
@@ -1371,7 +1372,6 @@ footer{border-top:1px solid var(--line);padding:46px 0 64px;color:var(--muted2);
     if (!withStage) return; // no mobile a cena é estática
     const index = Math.min(frames.length - 1, Math.floor(progress * frames.length));
     if (performance.now() > lockUntil) setScene(index);
-    if (bar) bar.style.width = (progress * 100).toFixed(1) + '%';
   };
   let sceneTick = false;
   addEventListener('scroll', () => {
