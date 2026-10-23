@@ -31,6 +31,12 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: ". -> target"
+      - name: Instalar dependências de sistema (Tauri)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev \
+            librsvg2-dev patchelf libssl-dev libsoup-3.0-dev
       - name: Testar o núcleo e o backend
         run: cargo test --workspace --all-features --verbose
       - name: Gerar PDF de exemplo (prova do motor vetorial)
