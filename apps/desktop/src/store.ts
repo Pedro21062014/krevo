@@ -17,7 +17,7 @@ import type {
   Settings,
   Tool,
 } from "./types";
-import { FORMATS, baseElement, templateToPage, type Template } from "./assets";
+import { FORMATS, baseElement, placeholderImage, templateToPage, type Template } from "./assets";
 import { uid } from "./util";
 
 const STORAGE_KEY = "krevo.v1";
@@ -67,7 +67,23 @@ function defaultSettings(): Settings {
   };
 }
 
-export function newProject(name = "Novo projeto", w = 1920, h = 1080): Project {
+export function starterPage(w: number, h: number): Page {
+  const art = baseElement("image", 0, 0, w, h);
+  art.name = "Mídia padrão";
+  art.src = placeholderImage("", "#0f1113", "#1f2e28", w, h);
+  art.fit = "cover";
+  art.opacity = 1;
+  return {
+    id: uid("pg"),
+    name: "Página 1",
+    width: w,
+    height: h,
+    background: "#0B1020",
+    elements: [art],
+  };
+}
+
+function newProject(name = "Novo projeto", w = 1920, h = 1080, withMedia = true): Project {
   const now = new Date().toISOString();
   return {
     id: uid("prj"),
@@ -76,16 +92,7 @@ export function newProject(name = "Novo projeto", w = 1920, h = 1080): Project {
     createdAt: now,
     updatedAt: now,
     brand: defaultSettings().brand,
-    pages: [
-      {
-        id: uid("pg"),
-        name: "Página 1",
-        width: w,
-        height: h,
-        background: "#0B1020",
-        elements: [],
-      },
-    ],
+    pages: [withMedia ? starterPage(w, h) : { id: uid("pg"), name: "Página 1", width: w, height: h, background: "#0B1020", elements: [] }],
   };
 }
 
@@ -97,6 +104,24 @@ function loadSettings(): Settings {
   } catch {
     return defaultSettings();
   }
+}
+
+/**
+ * Cópia do projeto sem as mídias pesadas (data:/blob:), usada só para a lista de
+ * recentes — o projeto completo continua no arquivo `.krevo` salvo pelo usuário.
+ */
+function stripHeavyMedia(project: Project): Project {
+  const clone = JSON.parse(JSON.stringify(project)) as Project;
+  for (const page of clone.pages) {
+    for (const el of page.elements) {
+      const src = el.src;
+      if (typeof src === "string" && (src.startsWith("data:") || src.startsWith("blob:")) && src.length > 4000) {
+        el.src = null;
+        el.name = `${el.name || "Mídia"} (arquivo no .krevo)`;
+      }
+    }
+  }
+  return clone;
 }
 
 function loadRecent(): ProjectSummary[] {
@@ -230,8 +255,8 @@ class Store {
     this.emit();
   }
 
-  createProject(name: string, w: number, h: number, template?: Template): void {
-    const project = newProject(name, w, h);
+  createProject(name: string, w: number, h: number, template?: Template, withMedia = true): void {
+    const project = newProject(name, w, h, template ? false : withMedia);
     if (template) {
       project.pages = [templateToPage(template)];
       project.name = template.name;
@@ -502,9 +527,16 @@ class Store {
       const raw = localStorage.getItem(`${STORAGE_KEY}.recent`);
       const parsed = raw ? (JSON.parse(raw) as { projects: Project[] }) : { projects: [] };
       const list = parsed.projects.filter((p) => p.id !== this.state.project.id);
-      list.unshift(this.state.project);
+      list.unshift(stripHeavyMedia(this.state.project));
       const trimmed = list.slice(0, 12);
-      localStorage.setItem(`${STORAGE_KEY}.recent`, JSON.stringify({ projects: trimmed }));
+      const payload = JSON.stringify({ projects: trimmed });
+      // Nunca deixamos um projeto gigante travar a interface.
+      if (payload.length > 3_500_000) {
+        const lean = trimmed.slice(0, 4);
+        localStorage.setItem(`${STORAGE_KEY}.recent`, JSON.stringify({ projects: lean }));
+      } else {
+        localStorage.setItem(`${STORAGE_KEY}.recent`, payload);
+      }
       this.state.recent = trimmed.map((p) => ({
         id: p.id,
         name: p.name,

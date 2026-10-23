@@ -224,6 +224,9 @@ pub struct TextProps {
     pub italic: bool,
     #[serde(default)]
     pub underline: bool,
+    /// Texto em caixa alta ao renderizar.
+    #[serde(default)]
+    pub uppercase: bool,
 }
 
 fn default_font() -> String {
@@ -330,6 +333,7 @@ impl Project {
                 color: "#F7F7FB".into(),
                 italic: false,
                 underline: false,
+                uppercase: false,
             }),
             src: None,
             fit: None,

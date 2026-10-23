@@ -1,13 +1,17 @@
 /** Tela inicial do Krevo — layout enxuto: navegação no topo, conteúdo denso. */
 
 import {
+  FILTER_PRESETS,
   FORMATS,
   GRADIENTS,
   ICONS,
   PALETTES,
+  SHAPES,
   STOCK_CATEGORIES,
   TEMPLATES,
   TEMPLATE_CATEGORIES,
+  TEXT_PRESETS,
+  shapeDataUri,
   baseElement,
   gradient,
   iconDataUri,
@@ -232,7 +236,7 @@ function elementosTab(): string {
   ];
   return `
   <section class="section" style="margin-top:8px">
-    <div class="section-head"><h2>Formas e textos</h2></div>
+    <div class="section-head"><h2>Formas e textos</h2><span class="hint">clique para inserir no design aberto</span></div>
     <div class="grid dense">
       ${shapes
         .map(
@@ -243,6 +247,51 @@ function elementosTab(): string {
         </button>`,
         )
         .join("")}
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head"><h2>Formas extras</h2><span class="hint">${SHAPES.length} vetores</span></div>
+    <div class="grid dense">
+      ${SHAPES.map(
+        (shape) => `
+        <button class="card" data-action="use-shape" data-id="${shape.id}" title="${shape.name}">
+          <div class="card-thumb" style="aspect-ratio:1;display:grid;place-items:center">
+            <img src="${shapeDataUri(shape.id, "#c9cbcd")}" style="width:30px;height:30px" alt="${shape.name}" />
+          </div>
+          <div class="card-body"><div class="meta"><div class="card-title">${shape.name}</div></div></div>
+        </button>`,
+      ).join("")}
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head"><h2>Estilos de texto</h2><span class="hint">combinações prontas de tipografia</span></div>
+    <div class="grid dense">
+      ${TEXT_PRESETS.map(
+        (preset) => `
+        <button class="card" data-action="use-text-preset" data-id="${preset.id}">
+          <div class="card-thumb" style="aspect-ratio:2/1;display:grid;place-items:center;background:var(--surface-2)">
+            <span style="font-size:${Math.max(11, Math.min(22, preset.size / 5))}px;font-weight:${preset.weight};color:var(--text)">Aa</span>
+          </div>
+          <div class="card-body"><div class="meta"><div class="card-title">${preset.name}</div><div class="card-sub">${preset.size}px · ${preset.weight}</div></div></div>
+        </button>`,
+      ).join("")}
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head"><h2>Filtros de imagem</h2><span class="hint">selecione uma imagem e aplique no inspetor</span></div>
+    <div class="grid dense">
+      ${FILTER_PRESETS.map(
+        (preset) => `
+        <div class="card">
+          <div class="card-thumb" style="aspect-ratio:3/2;display:grid;place-items:center;background:linear-gradient(135deg,#243b34,#4a5f8c)">
+            <span style="filter:brightness(${preset.filters.brightness}%) contrast(${preset.filters.contrast}%) saturate(${preset.filters.saturation}%) grayscale(${preset.filters.grayscale}%) blur(${preset.filters.blur}px);width:100%;height:100%;background:linear-gradient(135deg,#2f6f5a,#8fb4d8);display:block"></span>
+          </div>
+          <div class="card-body"><div class="meta"><div class="card-title">${preset.name}</div></div></div>
+        </div>`,
+      ).join("")}
     </div>
   </section>
 
@@ -662,6 +711,35 @@ function onAction(event: Event, node: HTMLElement): void {
       el.name = id;
       store.addElement(el);
     });
+    return;
+  }
+  if (action === "use-shape") {
+    createWithElement((page) => {
+      const size = Math.min(page.width, page.height) * 0.42;
+      const el = baseElement("icon", (page.width - size) / 2, (page.height - size) / 2, size, size);
+      el.src = shapeDataUri(id, "#F1F1EF");
+      el.name = id;
+      store.addElement(el);
+    }, id);
+    return;
+  }
+  if (action === "use-text-preset") {
+    const preset = TEXT_PRESETS.find((item) => item.id === id);
+    if (!preset) return;
+    createWithElement((page) => {
+      const margin = Math.round(Math.min(page.width, page.height) * 0.08);
+      const width = page.width - margin * 2;
+      const height = Math.round(preset.size * 2.4);
+      const node = textEl(margin, Math.round(page.height * 0.42), width, height, preset.name === "Botão" ? "Começar agora" : "Seu texto aqui", {
+        size: preset.size,
+        weight: preset.weight,
+        color: "#F5F5F3",
+        align: preset.align,
+        lineHeight: preset.lineHeight,
+      });
+      node.name = preset.name;
+      store.addElement(node);
+    }, preset.name);
     return;
   }
   if (action === "use-palette") {

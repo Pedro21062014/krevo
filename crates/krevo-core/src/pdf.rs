@@ -535,7 +535,12 @@ fn draw_text(
     layer.set_fill_color(color.to_color());
 
     let line_height = (text.font_size * text.line_height).max(1.0);
-    let lines = wrap_text(&text.content, el.w, text.font_size, bold);
+    let content = if text.uppercase {
+        text.content.to_uppercase()
+    } else {
+        text.content.clone()
+    };
+    let lines = wrap_text(&content, el.w, text.font_size, bold);
     let total_h = lines.len() as f32 * line_height;
     // centraliza verticalmente dentro da caixa quando sobra espaço
     let start_y = if total_h < el.h {
@@ -562,7 +567,7 @@ fn draw_text(
     if text.underline {
         let y = start_y + line_height - text.font_size * 0.12;
         layer.set_fill_color(color.to_color());
-        let uw = text_width(&text.content, text.font_size, bold).min(el.w);
+        let uw = text_width(&content, text.font_size, bold).min(el.w);
         layer.add_rect(rect_shape(el.x, y, uw, 1.0, page.height, PaintMode::Fill));
     }
 }

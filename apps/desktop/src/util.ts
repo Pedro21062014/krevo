@@ -80,6 +80,62 @@ export function readFileAsDataUrl(file: File): Promise<string> {
   });
 }
 
+/** Arquivos acima deste tamanho entram como object URL (evita base64 gigante). */
+const HEAVY_MEDIA_BYTES = 1.5 * 1024 * 1024;
+
+/** Object URLs vivos nesta sessão, para liberar depois. */
+const objectUrls = new Map<string, File>();
+
+/** Converte um object URL de volta para data URL (ao salvar o projeto). */
+export function isObjectUrl(src: string | null | undefined): boolean {
+  return typeof src === "string" && src.startsWith("blob:");
+}
+
+export function fileForObjectUrl(src: string): File | undefined {
+  return objectUrls.get(src);
+}
+
+export function releaseObjectUrl(src: string): void {
+  if (objectUrls.has(src)) {
+    objectUrls.delete(src);
+    URL.revokeObjectURL(src);
+  }
+}
+
+/**
+ * Prepara a mídia de um arquivo para o canvas.
+ *
+ * Vídeos e arquivos grandes usam `blob:` (instantâneo, sem base64 na memória).
+ * Imagens pequenas continuam como data URL, que já vai pronta para o PDF.
+ */
+export async function mediaSource(file: File): Promise<string> {
+  const isVideo = file.type.startsWith("video/");
+  if (isVideo || file.size > HEAVY_MEDIA_BYTES) {
+    const url = URL.createObjectURL(file);
+    objectUrls.set(url, file);
+    return url;
+  }
+  return readFileAsDataUrl(file);
+}
+
+/** Troca todos os `blob:` de um projeto por data URLs (usado ao salvar). */
+export async function materializeMedia<T>(project: T): Promise<T> {
+  const clone = JSON.parse(JSON.stringify(project)) as T & {
+    pages?: { elements?: { src?: string | null }[] }[];
+  };
+  for (const page of clone.pages ?? []) {
+    for (const el of page.elements ?? []) {
+      const src = el.src;
+      if (!isObjectUrl(src)) continue;
+      const file = fileForObjectUrl(src as string);
+      if (!file) continue;
+      el.src = await readFileAsDataUrl(file);
+    }
+  }
+  return clone;
+}
+
+/** Miniatura leve (para salvar o projeto recente sem estourar o localStorage). */
 export function readFileAsText(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();

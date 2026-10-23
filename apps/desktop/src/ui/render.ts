@@ -10,7 +10,11 @@ export function elementCss(el: Element): string {
     `width:${el.w}px`,
     `height:${el.h}px`,
   ];
-  if (el.rotation) css.push(`transform:rotate(${el.rotation}deg)`);
+  const transforms: string[] = [];
+  if (el.rotation) transforms.push(`rotate(${el.rotation}deg)`);
+  if (el.flipH) transforms.push("scaleX(-1)");
+  if (el.flipV) transforms.push("scaleY(-1)");
+  if (transforms.length) css.push(`transform:${transforms.join(" ")}`);
   if (el.opacity !== 1) css.push(`opacity:${el.opacity}`);
   if (el.hidden) css.push("display:none");
   if (el.fill) css.push(`background:${toCss(el.fill as never)}`);
@@ -24,6 +28,16 @@ export function elementCss(el: Element): string {
     css.push(el.stroke ? `${base}, inset 0 0 0 ${el.stroke.width}px ${el.stroke.color}` : base);
   }
   if (el.kind === "ellipse") css.push("border-radius:50%");
+  const f = el.filters;
+  if (f) {
+    const parts: string[] = [];
+    if (f.brightness !== 100) parts.push(`brightness(${f.brightness}%)`);
+    if (f.contrast !== 100) parts.push(`contrast(${f.contrast}%)`);
+    if (f.saturation !== 100) parts.push(`saturate(${f.saturation}%)`);
+    if (f.grayscale > 0) parts.push(`grayscale(${f.grayscale}%)`);
+    if (f.blur > 0) parts.push(`blur(${f.blur}px)`);
+    if (parts.length) css.push(`filter:${parts.join(" ")}`);
+  }
   return css.join(";");
 }
 
@@ -39,6 +53,7 @@ export function textCss(el: Element): string {
     `color:${t.color}`,
     `text-align:${t.align}`,
     t.italic ? "font-style:italic" : "",
+    t.uppercase ? "text-transform:uppercase" : "",
     t.underline ? "text-decoration:underline" : "",
     "align-items:" +
       (t.align === "center" ? "center" : t.align === "right" ? "flex-end" : "flex-start"),
@@ -70,7 +85,9 @@ export function applyElement(node: HTMLElement, el: Element, interactive = false
       }
       span.style.cssText = `display:block;width:100%;${textCss(el)}`;
       node.style.cssText += `;${textCss(el)}`;
-      const content = el.text?.content ?? "";
+      const content = el.text?.uppercase
+        ? (el.text?.content ?? "").toUpperCase()
+        : (el.text?.content ?? "");
       if (span.getAttribute("contenteditable") !== "true" && span.textContent !== content) {
         span.textContent = content;
       }
@@ -88,13 +105,16 @@ export function applyElement(node: HTMLElement, el: Element, interactive = false
       }
       if (node.dataset.src !== src || kindChanged) {
         node.replaceChildren();
-        if (el.kind === "video" && src.startsWith("data:video")) {
+        if (el.kind === "video") {
           const video = document.createElement("video");
           video.src = src;
           video.muted = true;
           video.loop = true;
           video.playsInline = true;
           video.autoplay = true;
+          video.preload = "metadata";
+          node.dataset.name = el.name || "vídeo";
+          video.addEventListener("error", () => node.classList.add("media-error"));
           node.appendChild(video);
         } else {
           const img = document.createElement("img");

@@ -4,6 +4,35 @@ Todas as mudanças importantes do Krevo ficam neste arquivo.
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 versionamento semântico.
 
+## [0.3.0] — 2026-10-23
+
+### Adicionado
+
+- **Kit de edição estilo Canva**: 12 formas vetoriais extras (triângulo, estrela,
+  seta, balão, hexágono, losango, cruz, anel, cápsula, arco, explosão), 8 estilos
+  de texto prontos, escolha de família tipográfica, itálico, sublinhado e caixa alta.
+- **Ajustes de imagem** no inspetor: brilho, contraste, saturação, preto e branco e
+  desfoque com sliders ao vivo, 8 filtros prontos, espelhar na horizontal/vertical.
+- **Sombras e cantos** em um clique (6 sombras, 7 raios de canto).
+- **Redimensionamento de página** com proporção (16:9, 4:3, A4 retrato/paisagem,
+  1:1, 9:16, 4:5, banner, capa) — o chamado *magic resize*.
+- **Exportar PNG** em 2× direto do canvas 2D (sem html2canvas), além do PDF vetorial.
+- **Mídia definida ao criar**: todo projeto novo já vem com fundo em arte suave e
+  paleta sóbria aplicada.
+- Subir/descer camadas direto na lista de camadas.
+
+### Corrigido
+
+- **Travamento no upload de vídeo**: o arquivo era convertido em base64 (2,7 MB
+  viravam ~3,6 MB de string) e o projeto inteiro ia para o `localStorage` a cada
+  alteração, estourando a cota e congelando a interface. Agora vídeos e arquivos
+  grandes entram como `blob:` local, a lista de recentes guarda uma versão sem
+  mídia pesada e o salvamento materializa a mídia apenas quando você pede.
+- Vídeo sem codec suportado mostra um cartão com o nome do arquivo em vez de
+  ficar decodificando em segundo plano.
+- Upload de vídeo/imagem não bloqueia mais a interface (medição: 150 ms para um
+  MP4 de 2 MB).
+
 ## [0.2.1] — 2026-10-23
 
 ### Corrigido

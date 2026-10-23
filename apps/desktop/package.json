@@ -1,7 +1,7 @@
 {
   "name": "krevo",
   "private": true,
-  "version": "0.2.1",
+  "version": "0.3.0",
   "type": "module",
   "description": "Krevo — estúdio de design com agente de IA. PDF, decks, imagens e vídeo.",
   "scripts": {

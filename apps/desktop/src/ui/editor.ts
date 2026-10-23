@@ -4,7 +4,11 @@
  */
 
 import {
+  FILTER_PRESETS,
   GRADIENTS,
+  RADIUS_PRESETS,
+  RESIZE_PRESETS,
+  SHADOW_PRESETS,
   baseElement,
   gradient,
   iconDataUri,
@@ -14,9 +18,10 @@ import {
 import { exportPdf, isDesktop, saveProjectFile } from "../bridge";
 import { store } from "../store";
 import type { Element, Page, TextAlign } from "../types";
-import { clamp, esc, readFileAsDataUrl, toCss } from "../util";
+import { clamp, esc, materializeMedia, mediaSource, toCss } from "../util";
 import { agentPanelHtml, bindAgentPanel } from "./agent";
 import { icons } from "./icons";
+import { downloadPagePng } from "./export-image";
 import { openMenuAt, openShortcuts } from "./menu";
 import { applyElement, renderElement, renderThumb } from "./render";
 
@@ -113,6 +118,7 @@ export class EditorView {
               <button data-edit="zoom-fit" title="Ajustar à tela">${icons.fit}</button>
             </div>
             <button class="btn small ghost" data-edit="toggle-grid" title="Mostrar grade">${icons.grid}</button>
+            <button class="btn small ghost" data-edit="export-png" title="Baixar PNG desta página">${icons.image} PNG</button>
             <button class="btn small" data-edit="save" title="Salvar (⌘S)">${icons.download} Salvar</button>
             <button class="btn primary small" data-edit="export-pdf" title="Exportar PDF (⇧⌘E)">${icons.pdf} PDF</button>
           </div>
@@ -394,6 +400,14 @@ export class EditorView {
         if (el) store.updateElement(id, { hidden: !el.hidden });
         return;
       }
+      if (target.closest("[data-layer-action='up']")) {
+        store.reorder(id, "forward");
+        return;
+      }
+      if (target.closest("[data-layer-action='down']")) {
+        store.reorder(id, "backward");
+        return;
+      }
       if (target.closest("[data-layer-action='lock']")) {
         const el = store.page.elements.find((e) => e.id === id);
         if (el) store.updateElement(id, { locked: !el.locked });
@@ -454,6 +468,9 @@ export class EditorView {
       case "export-pdf":
         await this.exportPdf();
         break;
+      case "export-png":
+        await this.exportPng();
+        break;
       default:
         break;
     }
@@ -461,7 +478,8 @@ export class EditorView {
 
   private async save(): Promise<void> {
     try {
-      const result = await saveProjectFile(store.state.project);
+      const project = await materializeMedia(store.state.project);
+      const result = await saveProjectFile(project);
       store.persistRecent();
       store.toast(result === "download" ? "Projeto baixado no navegador." : `Projeto salvo em ${result}`, "success");
     } catch (error) {
@@ -470,9 +488,22 @@ export class EditorView {
     }
   }
 
+  private async exportPng(): Promise<void> {
+    try {
+      store.toast("Gerando PNG em 2×…", "info");
+      const page = store.page;
+      await downloadPagePng(page, store.state.project.name || page.name, 2);
+      store.toast(`PNG ${Math.round(page.width * 2)}×${Math.round(page.height * 2)} baixado.`, "success");
+    } catch (error) {
+      store.toast(`Falha ao gerar o PNG: ${(error as Error).message}`, "error");
+    }
+  }
+
   private async exportPdf(): Promise<void> {
     try {
-      const result = await exportPdf(store.state.project);
+      store.toast("Preparando o PDF…", "info");
+      const project = await materializeMedia(store.state.project);
+      const result = await exportPdf(project);
       store.toast(`PDF gerado em ${result}`, "success");
     } catch (error) {
       const message = (error as Error).message;
@@ -804,6 +835,7 @@ export class EditorView {
       },
       { label: "Ajustar à tela", shortcut: "⌘0", action: () => this.onToolbar("zoom-fit") },
       { separator: true },
+      { label: "Baixar PNG da página", action: () => void this.exportPng() },
       { label: "Atalhos", shortcut: "?", action: () => openShortcuts() },
     ]);
   }
@@ -858,15 +890,18 @@ export class EditorView {
         continue;
       }
       if (file.type.startsWith("video/")) {
-        const data = await readFileAsDataUrl(file);
+        store.toast(`Carregando vídeo (${Math.round(file.size / 1048576)} MB)…`, "info");
+        const src = await mediaSource(file);
         const el = baseElement("video", point.x, point.y, 480, 270);
-        el.src = data;
+        el.src = src;
+        el.fit = "cover";
         el.name = file.name;
         store.addElement(el);
+        store.toast("Vídeo inserido. Use o inspetor para trocar o enquadramento.", "success");
         continue;
       }
       if (file.type.startsWith("image/")) {
-        const data = await readFileAsDataUrl(file);
+        const data = await mediaSource(file);
         const img = new Image();
         img.src = data;
         await new Promise((resolve) => {
@@ -1212,6 +1247,8 @@ export class EditorView {
         <div class="layer-row ${store.state.selection.includes(el.id) ? "active" : ""}" data-layer-id="${el.id}">
           <span class="mini" data-layer-action="lock" title="${el.locked ? "Desbloquear" : "Bloquear"}">${el.locked ? icons.lock : icons.unlock}</span>
           <span class="grow">${esc(label)}</span>
+          <span class="mini" data-layer-action="up" title="Subir uma camada">▲</span>
+          <span class="mini" data-layer-action="down" title="Descer uma camada">▼</span>
           <span class="mini" data-layer-action="hide" title="${el.hidden ? "Mostrar" : "Ocultar"}">${el.hidden ? icons.eyeOff : icons.eye}</span>
         </div>`;
       })
@@ -1323,6 +1360,22 @@ export class EditorView {
           <div class="field"><label>Entrelinha</label><input class="input" type="number" step="0.05" data-text="lineHeight" value="${el.text.lineHeight}" /></div>
           <div class="field"><label>Kerning</label><input class="input" type="number" step="0.5" data-text="letterSpacing" value="${el.text.letterSpacing}" /></div>
         </div>
+        <div class="field-row">
+          <div class="field"><label>Fonte</label>
+            <select class="select" data-text="fontFamily">
+              ${["Inter", "Helvetica", "Georgia", "Times New Roman", "Courier New", "Verdana"].map(
+                (family) => `<option value="${family}" ${el.text?.fontFamily === family ? "selected" : ""}>${family}</option>`,
+              ).join("")}
+            </select>
+          </div>
+          <div class="field"><label>Estilo</label>
+            <div class="seg">
+              <button class="${el.text?.italic ? "active" : ""}" data-text-style="italic" title="Itálico"><i>I</i></button>
+              <button class="${el.text?.underline ? "active" : ""}" data-text-style="underline" title="Sublinhado"><u>S</u></button>
+              <button class="${el.text?.uppercase ? "active" : ""}" data-text-style="uppercase" title="CAIXA ALTA">AA</button>
+            </div>
+          </div>
+        </div>
         <div class="field"><label>Alinhamento</label>
           <div class="seg">
             ${(["left", "center", "right"] as TextAlign[])
@@ -1348,11 +1401,38 @@ export class EditorView {
         </div>
         <div class="row wrap">
           <button class="btn small" data-inspector="replace-media">${icons.image} Trocar arquivo</button>
+          <button class="btn small ghost" data-inspector="flip-h" title="Espelhar na horizontal">⇄ Virar</button>
+          <button class="btn small ghost" data-inspector="flip-v" title="Espelhar na vertical">⇅ Virar</button>
           ${el.src ? `<button class="btn small ghost" data-inspector="clear-media">Remover</button>` : ""}
         </div>
+        <div class="group-title">Ajustes de imagem</div>
+        <div class="chips" style="margin-bottom:8px">
+          ${FILTER_PRESETS.map(
+            (preset) =>
+              `<button class="chip" data-filter-preset="${preset.id}">${preset.name}</button>`,
+          ).join("")}
+        </div>
+        ${this.filterSlider("brightness", "Brilho", "%", 20, 180)}
+        ${this.filterSlider("contrast", "Contraste", "%", 40, 200)}
+        ${this.filterSlider("saturation", "Saturação", "%", 0, 200)}
+        ${this.filterSlider("grayscale", "P&B", "%", 0, 100)}
+        ${this.filterSlider("blur", "Desfoque", "px", 0, 24)}
       `
           : ""
       }
+
+      <div class="group-title">Cantos</div>
+      <div class="chips" style="margin-bottom:6px">
+        ${RADIUS_PRESETS.map(
+          (value) => `<button class="chip ${Math.round(el.radius) === value ? "active" : ""}" data-radius="${value}">${value}</button>`,
+        ).join("")}
+      </div>
+      <div class="group-title">Sombra</div>
+      <div class="chips">
+        ${SHADOW_PRESETS.map(
+          (preset) => `<button class="chip ${(el.shadow?.blur ?? -1) === (preset.shadow?.blur ?? -1) ? "active" : ""}" data-shadow="${preset.id}">${preset.name}</button>`,
+        ).join("")}
+      </div>
 
       ${
         el.kind === "rect" || el.kind === "ellipse" || el.kind === "frame" || el.kind === "icon"
@@ -1374,6 +1454,35 @@ export class EditorView {
       </div>`;
   }
 
+  /** Redimensiona a página mantendo os elementos proporcionais. */
+  private resizePage(width: number, height: number): void {
+    const page = store.page;
+    if (page.width === width && page.height === height) return;
+    store.pushHistory();
+    const sx = width / page.width;
+    const sy = height / page.height;
+    const scale = Math.min(sx, sy);
+    for (const el of page.elements) {
+      el.x = Math.round(el.x * sx);
+      el.y = Math.round(el.y * sy);
+      el.w = Math.round(el.w * scale);
+      el.h = Math.round(el.h * scale);
+      el.radius = Math.round(el.radius * scale);
+      if (el.text) {
+        el.text = {
+          ...el.text,
+          fontSize: Math.max(6, Math.round(el.text.fontSize * scale)),
+          letterSpacing: el.text.letterSpacing * scale,
+        };
+      }
+    }
+    page.width = width;
+    page.height = height;
+    this.inspectorKey = "";
+    store.patch({ zoom: 0, selection: [] });
+    store.toast(`Página redimensionada para ${width}×${height}.`, "success");
+  }
+
   private alignSection(): string {
     return `
       <div class="group-title">Alinhar</div>
@@ -1384,6 +1493,21 @@ export class EditorView {
         <button data-align-mode="top" title="Topo">⇡</button>
         <button data-align-mode="center-v" title="Meio">↕</button>
         <button data-align-mode="bottom" title="Base">⇣</button>
+      </div>`;
+  }
+
+  private filterSlider(
+    key: "brightness" | "contrast" | "saturation" | "grayscale" | "blur",
+    label: string,
+    unit: string,
+    min: number,
+    max: number,
+  ): string {
+    const current = store.selected[0]?.filters?.[key] ?? (key === "blur" || key === "grayscale" ? 0 : 100);
+    return `
+      <div class="field">
+        <label>${label} <span class="tiny muted" data-filter-value="${key}">${current}${unit}</span></label>
+        <input class="range" type="range" min="${min}" max="${max}" value="${current}" data-filter="${key}" />
       </div>`;
   }
 
@@ -1424,6 +1548,14 @@ export class EditorView {
             .join("")}
         </div>
       </div>
+      <div class="field"><label>Redimensionar (mantém proporção)</label>
+        <div class="chips" style="margin-top:2px">
+          ${RESIZE_PRESETS.map(
+            (preset) =>
+              `<button class="chip ${page.width === preset.w && page.height === preset.h ? "active" : ""}" data-resize="${preset.id}" title="${preset.w}×${preset.h}">${preset.name}</button>`,
+          ).join("")}
+        </div>
+      </div>
       <div class="field"><label>Fundo rápido</label>
         <div class="row wrap" style="gap:6px">
           ${["#FFFFFF", "#0B1020", "#F7F7FB", "#111214", "#FAF7F2", "#06231F"]
@@ -1448,8 +1580,58 @@ export class EditorView {
 
   private onInspectorClick(event: Event): void {
     const target = event.target as HTMLElement;
+
+    const filterPreset = target.closest<HTMLElement>("[data-filter-preset]")?.dataset.filterPreset;
+    if (filterPreset) {
+      const preset = FILTER_PRESETS.find((item) => item.id === filterPreset);
+      const el = store.selected[0];
+      if (preset && el) {
+        store.updateElement(el.id, { filters: { ...preset.filters } });
+        this.inspectorKey = "";
+        this.paintInspector();
+      }
+      return;
+    }
+
+    const radiusPreset = target.closest<HTMLElement>("[data-radius]")?.dataset.radius;
+    if (radiusPreset !== undefined) {
+      const el = store.selected[0];
+      if (el) store.updateElement(el.id, { radius: Number(radiusPreset) });
+      return;
+    }
+
+    const shadowPreset = target.closest<HTMLElement>("[data-shadow]")?.dataset.shadow;
+    if (shadowPreset) {
+      const preset = SHADOW_PRESETS.find((item) => item.id === shadowPreset);
+      const el = store.selected[0];
+      if (el) {
+        store.updateElement(el.id, { shadow: preset?.shadow ? { ...preset.shadow } : null });
+        this.inspectorKey = "";
+        this.paintInspector();
+      }
+      return;
+    }
+
+    const resize = target.closest<HTMLElement>("[data-resize]")?.dataset.resize;
+    if (resize) {
+      const preset = RESIZE_PRESETS.find((item) => item.id === resize);
+      if (preset) this.resizePage(preset.w, preset.h);
+      return;
+    }
+
     const action = target.closest<HTMLElement>("[data-inspector]")?.dataset.inspector;
     const alignMode = target.closest<HTMLElement>("[data-align-mode]")?.dataset.alignMode;
+    const textStyle = target.closest<HTMLElement>("[data-text-style]")?.dataset.textStyle;
+    if (textStyle) {
+      const el = store.selected[0];
+      if (el?.text) {
+        const key = textStyle as "italic" | "underline" | "uppercase";
+        store.updateElement(el.id, { text: { ...el.text, [key]: !el.text[key] } });
+        this.inspectorKey = "";
+        this.paintInspector();
+      }
+      return;
+    }
     const alignText = target.closest<HTMLElement>("[data-align]")?.dataset.align;
     const fit = target.closest<HTMLElement>("[data-fit]")?.dataset.fit;
     const colorBtn = target.closest<HTMLElement>("[data-color]");
@@ -1515,6 +1697,12 @@ export class EditorView {
       case "add-video":
         this.pickFile("video/*");
         break;
+      case "flip-h":
+        if (el) store.updateElement(el.id, { flipH: !el.flipH });
+        break;
+      case "flip-v":
+        if (el) store.updateElement(el.id, { flipV: !el.flipV });
+        break;
       case "replace-media":
         this.pickFile(el?.kind === "video" ? "video/*" : "image/*", el?.id);
         break;
@@ -1533,7 +1721,7 @@ export class EditorView {
     input.addEventListener("change", async () => {
       const file = input.files?.[0];
       if (!file) return;
-      const data = await readFileAsDataUrl(file);
+      const data = await mediaSource(file);
       if (replaceId) {
         const el = store.page.elements.find((e) => e.id === replaceId);
         if (el) store.updateElement(replaceId, { src: data, name: file.name });
@@ -1621,6 +1809,18 @@ export class EditorView {
 
   private onInspectorInput(event: Event): void {
     const target = event.target as HTMLInputElement;
+
+    if (target.dataset.filter) {
+      const el = store.selected[0];
+      if (!el) return;
+      const key = target.dataset.filter as keyof NonNullable<Element["filters"]>;
+      const current = el.filters ?? { brightness: 100, contrast: 100, saturation: 100, blur: 0, grayscale: 0 };
+      store.updateElement(el.id, { filters: { ...current, [key]: Number(target.value) } }, false);
+      const label = this.root.querySelector(`[data-filter-value="${key}"]`);
+      if (label) label.textContent = `${target.value}${key === "blur" ? "px" : "%"}`;
+      return;
+    }
+
     // O conteúdo do texto atualiza ao vivo no canvas enquanto se digita.
     if (target.dataset.text === "content") {
       const el = store.selected[0];

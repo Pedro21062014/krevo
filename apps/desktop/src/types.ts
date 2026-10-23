@@ -52,6 +52,17 @@ export interface TextProps {
   color: string;
   italic: boolean;
   underline: boolean;
+  /** Texto em caixa alta. */
+  uppercase?: boolean;
+}
+
+/** Ajustes de imagem (como no Canva). */
+export interface ElementFilters {
+  brightness: number;
+  contrast: number;
+  saturation: number;
+  blur: number;
+  grayscale: number;
 }
 
 export interface Element {
@@ -73,6 +84,10 @@ export interface Element {
   text?: TextProps | null;
   src?: string | null;
   fit?: ImageFit | null;
+  /** Ajustes de imagem: 100/100/100/0/0 = original. */
+  filters?: ElementFilters | null;
+  flipH?: boolean;
+  flipV?: boolean;
 }
 
 export interface Page {

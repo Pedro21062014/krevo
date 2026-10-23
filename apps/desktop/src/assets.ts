@@ -237,9 +237,9 @@ export function placeholderImage(
 <rect width="${w}" height="${h}" filter="url(#n)" opacity="0.55"/>
 <circle cx="${w * 0.78}" cy="${h * 0.22}" r="${Math.min(w, h) * 0.22}" fill="#fff" opacity="0.14"/>
 <circle cx="${w * 0.2}" cy="${h * 0.85}" r="${Math.min(w, h) * 0.3}" fill="#000" opacity="0.1"/>
-<text x="50%" y="50%" font-family="Inter,Segoe UI,sans-serif" font-size="${Math.round(
+${label ? `<text x="50%" y="50%" font-family="Inter,Segoe UI,sans-serif" font-size="${Math.round(
     Math.min(w, h) * 0.07,
-  )}" fill="#fff" opacity="0.85" text-anchor="middle" dominant-baseline="middle">${label}</text>
+  )}" fill="#fff" opacity="0.85" text-anchor="middle" dominant-baseline="middle">${label}</text>` : ""}
 </svg>`;
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
@@ -547,4 +547,94 @@ export const TEMPLATES: Template[] = [
 export const TEMPLATE_CATEGORIES = [
   "Todos",
   ...Array.from(new Set(TEMPLATES.map((t) => t.category))),
+];
+
+/* ------------------------------------------------------------------ */
+/* Kit estilo Canva: formas, estilos de texto, ajustes e efeitos       */
+/* ------------------------------------------------------------------ */
+
+/** Formas vetoriais extras (preenchidas com a cor escolhida). */
+export const SHAPES: { id: string; name: string; path: string; viewBox?: string }[] = [
+  { id: "triangle", name: "Triângulo", path: "M50 4 96 92H4z" },
+  { id: "star", name: "Estrela", path: "M50 3l14.6 29.6L97 37.2 71.5 62l6 34.5L50 80.2 22.6 96.5l6-34.5L3 37.2l32.4-4.6z" },
+  { id: "arrow", name: "Seta", path: "M4 42h58V18l38 34-38 34V62H4z" },
+  { id: "chevron", name: "Chevron", path: "M18 6l44 44-44 44H38l44-44L38 6z" },
+  { id: "bubble", name: "Balão", path: "M8 12h84a8 8 0 018 8v44a8 8 0 01-8 8H60l-22 18V72H8a8 8 0 01-8-8V20a8 8 0 018-8z" },
+  { id: "hexagon", name: "Hexágono", path: "M50 3l41 24v46L50 97 9 73V27z" },
+  { id: "diamond", name: "Losango", path: "M50 4l46 46-46 46L4 50z" },
+  { id: "cross", name: "Cruz", path: "M36 4h28v32h32v28H64v32H36V64H4V36h32z" },
+  { id: "ring", name: "Anel", path: "M50 4a46 46 0 100 92 46 46 0 000-92zm0 18a28 28 0 110 56 28 28 0 010-56z" },
+  { id: "pill", name: "Cápsula", path: "M26 10h48a40 40 0 010 80H26a40 40 0 010-80z" },
+  { id: "quarter", name: "Arco", path: "M4 96V4a92 92 0 0192 92z" },
+  { id: "burst", name: "Explosão", path: "M50 2l8 22 18-14 2 23 23-3-9 21 21 9-19 13 14 18-23 2 3 23-21-10-9 22-14-19-18 14-2-23-23 3 10-21L2 55l19-13L8 24l23-2L28 0z" },
+];
+
+/** SVG da forma como data URI (cor sólida). */
+export function shapeDataUri(id: string, color = "#0B1020"): string {
+  const shape = SHAPES.find((item) => item.id === id);
+  if (!shape) return "";
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="${shape.path}" fill="${color}"/></svg>`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
+/** Estilos de texto prontos (como as combinações do Canva). */
+export const TEXT_PRESETS: {
+  id: string;
+  name: string;
+  size: number;
+  weight: number;
+  lineHeight: number;
+  align: "left" | "center" | "right";
+  width?: number;
+}[] = [
+  { id: "titulo", name: "Título", size: 96, weight: 800, lineHeight: 1.02, align: "left" },
+  { id: "subtitulo", name: "Subtítulo", size: 48, weight: 600, lineHeight: 1.15, align: "left" },
+  { id: "corpo", name: "Corpo", size: 28, weight: 400, lineHeight: 1.5, align: "left" },
+  { id: "citacao", name: "Citação", size: 40, weight: 300, lineHeight: 1.4, align: "center" },
+  { id: "rotulo", name: "Rótulo", size: 18, weight: 600, lineHeight: 1.2, align: "left" },
+  { id: "botao", name: "Botão", size: 24, weight: 600, lineHeight: 1, align: "center" },
+  { id: "destaque", name: "Destaque", size: 140, weight: 800, lineHeight: 0.95, align: "center" },
+  { id: "legenda", name: "Legenda", size: 16, weight: 400, lineHeight: 1.4, align: "left" },
+];
+
+/** Presets de ajuste de imagem. */
+export const FILTER_PRESETS: {
+  id: string;
+  name: string;
+  filters: { brightness: number; contrast: number; saturation: number; blur: number; grayscale: number };
+}[] = [
+  { id: "original", name: "Original", filters: { brightness: 100, contrast: 100, saturation: 100, blur: 0, grayscale: 0 } },
+  { id: "vivido", name: "Vívido", filters: { brightness: 104, contrast: 116, saturation: 138, blur: 0, grayscale: 0 } },
+  { id: "suave", name: "Suave", filters: { brightness: 106, contrast: 92, saturation: 96, blur: 0, grayscale: 0 } },
+  { id: "pb", name: "Preto e branco", filters: { brightness: 102, contrast: 112, saturation: 100, blur: 0, grayscale: 100 } },
+  { id: "fosco", name: "Fosco", filters: { brightness: 104, contrast: 86, saturation: 78, blur: 0, grayscale: 0 } },
+  { id: "quente", name: "Quente", filters: { brightness: 104, contrast: 104, saturation: 122, blur: 0, grayscale: 0 } },
+  { id: "desfoque", name: "Desfoque", filters: { brightness: 100, contrast: 100, saturation: 100, blur: 8, grayscale: 0 } },
+  { id: "escuro", name: "Escuro", filters: { brightness: 78, contrast: 118, saturation: 92, blur: 0, grayscale: 0 } },
+];
+
+/** Sombras prontas. */
+export const SHADOW_PRESETS: { id: string; name: string; shadow: { x: number; y: number; blur: number; color: string } | null }[] = [
+  { id: "none", name: "Sem sombra", shadow: null },
+  { id: "suave", name: "Suave", shadow: { x: 0, y: 6, blur: 18, color: "rgba(0,0,0,0.22)" } },
+  { id: "media", name: "Média", shadow: { x: 0, y: 12, blur: 30, color: "rgba(0,0,0,0.34)" } },
+  { id: "alta", name: "Alta", shadow: { x: 0, y: 22, blur: 48, color: "rgba(0,0,0,0.45)" } },
+  { id: "dura", name: "Dura", shadow: { x: 8, y: 8, blur: 0, color: "rgba(0,0,0,0.55)" } },
+  { id: "menta", name: "Menta", shadow: { x: 0, y: 14, blur: 34, color: "rgba(52,211,159,0.38)" } },
+];
+
+/** Cantos prontos. */
+export const RADIUS_PRESETS = [0, 4, 8, 16, 24, 36, 64];
+
+/** Tamanhos de página para "redimensionar" (magic resize). */
+export const RESIZE_PRESETS: { id: string; name: string; w: number; h: number }[] = [
+  { id: "slide", name: "Slide 16:9", w: 1920, h: 1080 },
+  { id: "slide-4-3", name: "Slide 4:3", w: 1440, h: 1080 },
+  { id: "a4", name: "A4 retrato", w: 794, h: 1123 },
+  { id: "a4-land", name: "A4 paisagem", w: 1123, h: 794 },
+  { id: "post", name: "Post 1:1", w: 1080, h: 1080 },
+  { id: "story", name: "Story 9:16", w: 1080, h: 1920 },
+  { id: "retrato", name: "Retrato 4:5", w: 1080, h: 1350 },
+  { id: "banner", name: "Banner 1200×628", w: 1200, h: 628 },
+  { id: "capa", name: "Capa 1600×900", w: 1600, h: 900 },
 ];

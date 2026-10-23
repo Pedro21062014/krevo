@@ -49,7 +49,7 @@ Tauri) e **TypeScript** (interface), que junta no mesmo app:
 | editar/gerar **PDF** | importa PDFs (até 30 páginas) e exporta PDF **vetorial** |
 | montar **apresentações** | páginas em 16:9, A4, story, banner… com miniaturas instantâneas |
 | compor **imagens** | arrastar e soltar, corte cover/contain, máscaras, sombras, ícones |
-| trabalhar com **vídeo** | solta o vídeo no canvas, define capa e exporta o frame |
+| trabalhar com **vídeo** | solta o vídeo no canvas (blob local, sem travar), define enquadramento e capa |
 | ter **elementos prontos** | 10 templates, 25 ícones, 10 gradientes, 8 paletas |
 | buscar **fotos** | Unsplash com a sua chave + acervo local, dentro da aba Elementos |
 | criar com **IA** | agente que desenha no canvas — **grátis sem chave** ou com a **sua** API (10 provedores) |
@@ -90,6 +90,12 @@ Tudo local. Sem cadastro, sem assinatura, sem telemetria.
   pisca) e os painéis só repintam quando o movimento termina.
 - **Menu de contexto** (botão direito) com editar texto, duplicar, copiar/colar,
   ordem das camadas, bloquear, ocultar e excluir.
+- **Kit de edição**: 12 formas vetoriais extras, 8 estilos de texto, famílias e
+  pesos tipográficos, caixa alta, ajustes de imagem (brilho, contraste, saturação,
+  P&B, desfoque) com 8 filtros prontos, espelhar, 6 sombras, cantos rápidos,
+  redimensionamento de página com proporção e exportação **PNG 2×**.
+- **Mídia definida ao criar**: todo projeto novo nasce com fundo em arte suave —
+  nunca uma tela vazia.
 - **Painel de atalhos** com `?`, além de `⌘C/⌘V`, `⌘[`/`⌘]`, `⌘⇧L`, `⌘⇧H`,
   `⌘⇧G`, `⌘0`, `⌘+`/`⌘−`.
 - Histórico de 80 estados (⌘Z / ⇧⌘Z), grade opcional, guias de alinhamento.
@@ -180,9 +186,9 @@ Os instaladores são gerados automaticamente pelo GitHub Actions a cada push em
 
 | Plataforma | Arquivos | Como instalar |
 |---|---|---|
-| **Windows 10/11 (x64)** | `Krevo_0.2.1_x64-setup.exe`, `Krevo_0.2.1_x64_en-US.msi` | execute o instalador (por usuário) |
-| **macOS 10.15+** | `Krevo_0.2.1_universal.dmg` (Intel + Apple Silicon) | abra o `.dmg` e arraste para Aplicativos |
-| **Linux** | `Krevo_0.2.1_amd64.deb`, `Krevo_0.2.1_amd64.AppImage` | `sudo dpkg -i` ou `chmod +x` no AppImage |
+| **Windows 10/11 (x64)** | `Krevo_0.3.0_x64-setup.exe`, `Krevo_0.3.0_x64_en-US.msi` | execute o instalador (por usuário) |
+| **macOS 10.15+** | `Krevo_0.3.0_universal.dmg` (Intel + Apple Silicon) | abra o `.dmg` e arraste para Aplicativos |
+| **Linux** | `Krevo_0.3.0_amd64.deb`, `Krevo_0.3.0_amd64.AppImage` | `sudo dpkg -i` ou `chmod +x` no AppImage |
 
 Os builds **não são assinados**. No macOS use botão direito → *Abrir*; no Windows
 o SmartScreen pode pedir *Mais informações → Executar assim mesmo*.
