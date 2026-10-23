@@ -17,7 +17,8 @@ import type { Element, Page, TextAlign } from "../types";
 import { clamp, esc, readFileAsDataUrl, toCss } from "../util";
 import { agentPanelHtml, bindAgentPanel } from "./agent";
 import { icons } from "./icons";
-import { renderElement, renderThumb } from "./render";
+import { openMenuAt, openShortcuts } from "./menu";
+import { applyElement, renderElement, renderThumb } from "./render";
 
 type DragMode = "move" | "resize" | "rotate" | "pan" | "marquee";
 
@@ -44,6 +45,12 @@ export class EditorView {
   private spaceDown = false;
   private lastClick: { id: string; at: number } | null = null;
   private lastAgentKey = "";
+  private nodes = new Map<string, HTMLElement>();
+  private pagesKey = "";
+  private layersKey = "";
+  private inspectorKey = "";
+  private moveFrame = 0;
+  private pendingMove: PointerEvent | null = null;
   private unsubscribe: (() => void) | null = null;
   private bound = false;
   private wantFit = true;
@@ -193,6 +200,68 @@ export class EditorView {
       store.select(store.page.elements.map((el) => el.id));
       return;
     }
+    if (mod && event.key.toLowerCase() === "c") {
+      const count = store.copySelection();
+      if (count) store.toast(`${count} elemento(s) copiado(s).`, "success");
+      return;
+    }
+    if (mod && event.key.toLowerCase() === "v") {
+      const count = store.pasteClipboard();
+      if (count) store.toast(`${count} elemento(s) colado(s).`, "success");
+      return;
+    }
+    if (mod && event.shiftKey && event.key.toLowerCase() === "l") {
+      event.preventDefault();
+      const el = store.selected[0];
+      if (el) store.updateElement(el.id, { locked: !el.locked });
+      return;
+    }
+    if (mod && event.shiftKey && event.key.toLowerCase() === "h") {
+      event.preventDefault();
+      const el = store.selected[0];
+      if (el) store.updateElement(el.id, { hidden: !el.hidden });
+      return;
+    }
+    if (mod && event.shiftKey && event.key.toLowerCase() === "g") {
+      event.preventDefault();
+      store.patch({ showGrid: !store.state.showGrid });
+      return;
+    }
+    if (mod && (event.key === "]" || event.key === "}")) {
+      event.preventDefault();
+      const el = store.selected[0];
+      if (el) store.reorder(el.id, event.shiftKey ? "front" : "forward");
+      return;
+    }
+    if (mod && (event.key === "[" || event.key === "{")) {
+      event.preventDefault();
+      const el = store.selected[0];
+      if (el) store.reorder(el.id, event.shiftKey ? "back" : "backward");
+      return;
+    }
+    if (mod && event.key === "0") {
+      event.preventDefault();
+      this.wantFit = true;
+      store.patch({ zoom: this.fitZoom(), pan: { x: 0, y: 0 } });
+      return;
+    }
+    if (mod && (event.key === "+" || event.key === "=")) {
+      event.preventDefault();
+      this.wantFit = false;
+      store.patch({ zoom: clamp(store.state.zoom * 1.15, 0.08, 4) });
+      return;
+    }
+    if (mod && event.key === "-") {
+      event.preventDefault();
+      this.wantFit = false;
+      store.patch({ zoom: clamp(store.state.zoom / 1.15, 0.08, 4) });
+      return;
+    }
+    if (event.key === "?" || (event.shiftKey && event.key === "/")) {
+      event.preventDefault();
+      openShortcuts();
+      return;
+    }
     if (event.key === "Delete" || event.key === "Backspace") {
       if (store.state.selection.length) {
         event.preventDefault();
@@ -282,6 +351,7 @@ export class EditorView {
     });
 
     this.stageWrap?.addEventListener("pointerdown", (event) => this.onStagePointerDown(event));
+    this.stageWrap?.addEventListener("contextmenu", (event) => this.onContextMenu(event));
     this.stageWrap?.addEventListener("dblclick", (event) => {
       const target = event.target as HTMLElement;
       const node = target.closest<HTMLElement>(".kf-el");
@@ -551,6 +621,19 @@ export class EditorView {
 
   private onPointerMove(event: PointerEvent): void {
     if (!this.drag) return;
+    // Agrupa os eventos no próximo quadro: arraste suave mesmo em máquinas lentas.
+    this.pendingMove = event;
+    if (this.moveFrame) return;
+    this.moveFrame = requestAnimationFrame(() => {
+      this.moveFrame = 0;
+      const pending = this.pendingMove;
+      this.pendingMove = null;
+      if (pending) this.applyPointerMove(pending);
+    });
+  }
+
+  private applyPointerMove(event: PointerEvent): void {
+    if (!this.drag) return;
     const drag = this.drag;
 
     if (drag.mode === "pan" && drag.panStart) {
@@ -630,12 +713,99 @@ export class EditorView {
   }
 
   private onPointerUp(): void {
-    if (this.drag?.mode === "pan") {
-      this.drag = null;
-      return;
+    if (this.moveFrame) {
+      cancelAnimationFrame(this.moveFrame);
+      this.moveFrame = 0;
+      if (this.pendingMove) this.applyPointerMove(this.pendingMove);
+      this.pendingMove = null;
     }
+    const wasDragging = this.drag !== null;
+    const moved = this.drag?.moved ?? false;
     this.drag = null;
     this.root.querySelectorAll(".guide").forEach((g) => g.remove());
+    if (wasDragging && moved) {
+      // Fecha a transação: atualiza painéis e salva o histórico uma única vez.
+      this.inspectorKey = "";
+      this.layersKey = "";
+      store.emit();
+    }
+  }
+
+  private onContextMenu(event: MouseEvent): void {
+    event.preventDefault();
+    const target = event.target as HTMLElement;
+    const node = target.closest<HTMLElement>(".kf-el");
+    const id = node?.dataset.id ?? "";
+    const el = id ? store.page.elements.find((e) => e.id === id) : undefined;
+
+    if (el) {
+      if (!store.state.selection.includes(el.id)) store.select([el.id]);
+      const single = store.selected.length === 1;
+      openMenuAt(event.clientX, event.clientY, [
+        { header: el.text?.content?.split("\n")[0].slice(0, 28) || el.name || el.kind },
+        {
+          label: "Editar texto",
+          shortcut: "duplo clique",
+          disabled: el.kind !== "text",
+          action: () => {
+            const live = this.stageInner?.querySelector<HTMLElement>(`.kf-el[data-id="${el.id}"]`);
+            if (live) this.startTextEdit(live, el);
+          },
+        },
+        { label: "Duplicar", shortcut: "⌘D", action: () => store.duplicateSelected() },
+        { label: "Copiar", shortcut: "⌘C", action: () => store.copySelection() },
+        { label: "Colar", shortcut: "⌘V", disabled: !store.hasClipboard, action: () => store.pasteClipboard() },
+        { separator: true },
+        { label: "Trazer para frente", shortcut: "⌘⇧]", action: () => store.reorder(el.id, "front") },
+        { label: "Avançar", shortcut: "⌘]", action: () => store.reorder(el.id, "forward") },
+        { label: "Recuar", shortcut: "⌘[", action: () => store.reorder(el.id, "backward") },
+        { label: "Enviar para trás", shortcut: "⌘⇧[", action: () => store.reorder(el.id, "back") },
+        { separator: true },
+        {
+          label: el.locked ? "Desbloquear" : "Bloquear",
+          shortcut: "⌘⇧L",
+          action: () => store.updateElement(el.id, { locked: !el.locked }),
+        },
+        {
+          label: el.hidden ? "Mostrar" : "Ocultar",
+          shortcut: "⌘⇧H",
+          action: () => store.updateElement(el.id, { hidden: !el.hidden }),
+        },
+        {
+          label: "Tamanho original",
+          disabled: !single || el.kind !== "image",
+          action: () => store.updateElement(el.id, { w: el.w, h: el.h }),
+        },
+        { separator: true },
+        {
+          label: "Excluir",
+          shortcut: "Del",
+          danger: true,
+          action: () => store.deleteSelected(),
+        },
+      ]);
+      return;
+    }
+
+    openMenuAt(event.clientX, event.clientY, [
+      { header: "Canvas" },
+      { label: "Inserir texto", shortcut: "T", action: () => this.addQuick("text") },
+      { label: "Inserir retângulo", shortcut: "R", action: () => this.addQuick("rect") },
+      { label: "Inserir elipse", shortcut: "O", action: () => this.addQuick("ellipse") },
+      { label: "Inserir imagem…", action: () => this.pickFile("image/*") },
+      { separator: true },
+      { label: "Colar", shortcut: "⌘V", disabled: !store.hasClipboard, action: () => store.pasteClipboard() },
+      { label: "Selecionar tudo", shortcut: "⌘A", action: () => store.select(store.page.elements.map((e) => e.id)) },
+      { separator: true },
+      {
+        label: store.state.showGrid ? "Ocultar grade" : "Mostrar grade",
+        shortcut: "⌘⇧G",
+        action: () => store.patch({ showGrid: !store.state.showGrid }),
+      },
+      { label: "Ajustar à tela", shortcut: "⌘0", action: () => this.onToolbar("zoom-fit") },
+      { separator: true },
+      { label: "Atalhos", shortcut: "?", action: () => openShortcuts() },
+    ]);
   }
 
   private snapToGuides(el: Element, x: number, y: number): { x: number; y: number } {
@@ -773,6 +943,9 @@ export class EditorView {
   private paintAll(): void {
     this.paintTopbar();
     this.paintStage();
+    // Durante um arraste, repintar páginas/camadas/inspetor a cada movimento é o
+    // que deixava tudo travado: só o canvas é atualizado até soltar o mouse.
+    if (this.drag) return;
     this.paintPages();
     this.paintLayers();
     this.paintInspector();
@@ -801,37 +974,57 @@ export class EditorView {
 
   private paintStage(): void {
     if (!this.stageInner) return;
-    // Enquanto o usuário edita um texto no canvas, não recriamos o DOM.
-    if (store.state.editingId) {
-      this.stageInner.style.transform = `translate(calc(-50% + ${store.state.pan.x}px), calc(-50% + ${
-        store.state.pan.y
-      }px)) scale(${store.state.zoom || 1})`;
-      return;
-    }
     const state = store.state;
-    if (!state.zoom) {
-      state.zoom = this.fitZoom();
-    }
+    if (!state.zoom) state.zoom = this.fitZoom();
     const page = store.page;
-    const zoom = state.zoom;
 
     const existing = this.stageInner.querySelector(".kf-page");
     const pageEl = existing instanceof HTMLElement ? existing : document.createElement("div");
-    pageEl.className = "kf-page";
+    if (!existing) {
+      pageEl.className = "kf-page";
+      this.stageInner.appendChild(pageEl);
+    }
     pageEl.style.width = `${page.width}px`;
     pageEl.style.height = `${page.height}px`;
     pageEl.style.background = page.background ? toCss(page.background as never) : "#FFFFFF";
-    pageEl.classList.toggle("grid-on", store.state.showGrid);
+    pageEl.classList.toggle("grid-on", state.showGrid);
+    this.pageEl = pageEl;
 
-    // redesenha os elementos
-    pageEl.innerHTML = "";
+    // Reaproveita os nós por id: nada de recriar (mídia não recarrega, arraste fica fluido).
+    const desired: HTMLElement[] = [];
+    const alive = new Set<string>();
     for (const el of page.elements) {
-      pageEl.appendChild(renderElement(el, true));
+      alive.add(el.id);
+      let node = this.nodes.get(el.id);
+      if (!node || !node.isConnected) {
+        node = document.createElement("div");
+        applyElement(node, el, true);
+        this.nodes.set(el.id, node);
+      } else {
+        applyElement(node, el, true);
+      }
+      desired.push(node);
+    }
+    for (const [id, node] of this.nodes) {
+      if (!alive.has(id)) {
+        node.remove();
+        this.nodes.delete(id);
+      }
     }
 
-    // overlay de seleção
-    const bounds = this.selectionBounds();
+    // Remove sobras (overlay antigo, elementos apagados) e reordena só se preciso.
+    const current = Array.from(pageEl.children).filter(
+      (child) => !(child as HTMLElement).classList.contains("selection-box"),
+    ) as HTMLElement[];
+    const ordered = current.length === desired.length && current.every((n, i) => n === desired[i]);
+    if (!ordered) {
+      pageEl.replaceChildren(...desired);
+    }
+
+    // Overlay de seleção (sempre recriado: é leve e posicional).
+    pageEl.querySelectorAll(".selection-box").forEach((box) => box.remove());
     if (state.selection.length) {
+      const bounds = this.selectionBounds();
       const box = document.createElement("div");
       box.className = `selection-box ${state.selection.length > 1 ? "multi" : ""}`;
       box.style.cssText = `left:${bounds.x}px;top:${bounds.y}px;width:${bounds.w}px;height:${bounds.h}px`;
@@ -850,11 +1043,11 @@ export class EditorView {
       pageEl.appendChild(box);
     }
 
-    if (!existing) this.stageInner.appendChild(pageEl);
-    this.pageEl = pageEl;
-    this.stageInner.style.transform = `translate(calc(-50% + ${state.pan.x}px), calc(-50% + ${state.pan.y}px)) scale(${zoom})`;
+    this.stageInner.style.transform = `translate(calc(-50% + ${state.pan.x}px), calc(-50% + ${
+      state.pan.y
+    }px)) scale(${state.zoom})`;
     const label = this.root.querySelector("#zoom-label");
-    if (label) label.textContent = `${Math.round(zoom * 100)}%`;
+    if (label) label.textContent = `${Math.round(state.zoom * 100)}%`;
   }
 
   private startTextEdit(passedNode: HTMLElement, el: Element): void {
@@ -885,6 +1078,14 @@ export class EditorView {
 
     const startedAt = performance.now();
     let done = false;
+
+    // Clique fora confirma a edição (era isso que fazia o texto "voltar").
+    const onDocPointerDown = (event: PointerEvent): void => {
+      const target = event.target as Node | null;
+      if (target && (span.contains(target) || node.contains(target))) return;
+      finish(true);
+    };
+
     const finish = (commit: boolean): void => {
       if (done) return;
       done = true;
@@ -894,6 +1095,7 @@ export class EditorView {
       node.classList.remove("editing");
       span.removeEventListener("blur", onBlur);
       span.removeEventListener("keydown", onKey);
+      window.removeEventListener("pointerdown", onDocPointerDown, true);
       store.patch({ editingId: null }, false);
       const current = el.text?.content ?? "";
       if (commit && raw !== current) {
@@ -915,8 +1117,10 @@ export class EditorView {
     };
     const onKey = (event: KeyboardEvent): void => {
       if (event.key === "Escape") {
+        // Esc confirma (perder o texto digitado é pior); Shift+Esc descarta.
         event.preventDefault();
-        finish(false);
+        event.stopPropagation();
+        finish(!event.shiftKey);
       }
       if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
         event.preventDefault();
@@ -925,10 +1129,19 @@ export class EditorView {
     };
     span.addEventListener("blur", onBlur);
     span.addEventListener("keydown", onKey);
+    window.addEventListener("pointerdown", onDocPointerDown, true);
   }
 
   private paintPages(): void {
     const host = this.root.querySelector("#pages-list");
+    const signature = store.state.project.pages
+      .map((page, index) => `${page.id}:${index === store.state.pageIndex ? 1 : 0}:${page.name}`)
+      .join("|");
+    if (signature === this.pagesKey) {
+      this.paintPageStrip();
+      return;
+    }
+    this.pagesKey = signature;
     if (host) {
       host.innerHTML = store.state.project.pages
         .map((page, index) => {
@@ -950,6 +1163,10 @@ export class EditorView {
         .join("");
     }
 
+    this.paintPageStrip();
+  }
+
+  private paintPageStrip(): void {
     const strip = this.root.querySelector("#page-strip");
     if (!strip) return;
     strip.innerHTML = "";
@@ -977,6 +1194,11 @@ export class EditorView {
     const host = this.root.querySelector("#layers-list");
     if (!host) return;
     const page = store.page;
+    const signature = `${store.state.selection.join(",")}|${page.elements
+      .map((el) => `${el.id}${el.hidden ? "h" : ""}${el.locked ? "l" : ""}${el.text?.content ?? el.name ?? ""}`)
+      .join("|")}`;
+    if (signature === this.layersKey) return;
+    this.layersKey = signature;
     if (!page.elements.length) {
       host.innerHTML = `<div class="empty-note">Sem elementos ainda.<br />Use <span class="kbd">T</span> texto, <span class="kbd">R</span> retângulo, <span class="kbd">O</span> elipse — ou peça ao agente.</div>`;
       return;
@@ -1035,6 +1257,11 @@ export class EditorView {
 
     const selected = store.selected;
     const page = store.page;
+    const signature = `${selected.map((el) => JSON.stringify(el) + el.id).join("~")}|${page.width}x${
+      page.height
+    }|${page.background ? toCss(page.background as never) : ""}|${page.name}`;
+    if (signature === this.inspectorKey) return;
+    this.inspectorKey = signature;
 
     if (!selected.length) {
       host.innerHTML = this.pageInspector(page);

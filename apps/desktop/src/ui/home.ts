@@ -46,7 +46,6 @@ const TABS: [string, string][] = [
   ["inicio", "Projetos"],
   ["templates", "Templates"],
   ["elementos", "Elementos"],
-  ["fotos", "Fotos"],
   ["ia", "Agente de IA"],
 ];
 
@@ -274,6 +273,8 @@ function elementosTab(): string {
     </div>
   </section>
 
+  ${fotosSection()}
+
   <section class="section">
     <div class="section-head"><h2>Paletas</h2><span class="hint">definem a cor base da marca usada pela IA</span></div>
     <div class="grid">
@@ -293,14 +294,14 @@ function elementosTab(): string {
   </section>`;
 }
 
-function fotosTab(): string {
+function fotosSection(): string {
   const photos = photoCache?.photos ?? [];
   const hint = photoCache?.hint ?? "";
   return `
-  <section class="section" style="margin-top:8px">
+  <section class="section">
     <div class="section-head">
       <h2>Fotos</h2>
-      <span class="hint">${isDesktop() ? "Unsplash com a sua chave · acervo local sempre disponível" : "acervo local · Unsplash no app desktop"}</span>
+      <span class="hint">${isDesktop() ? "Unsplash com a sua chave · acervo local sempre disponível" : "acervo local · clique para inserir no design"}</span>
     </div>
     <div class="row wrap" style="margin-bottom:14px">
       <input class="input" id="photo-q" placeholder="Buscar: café, montanha, escritório…" value="${esc(photoQuery)}" style="max-width:320px" />
@@ -450,7 +451,7 @@ function tabContent(tab: string): string {
     case "elementos":
       return elementosTab();
     case "fotos":
-      return fotosTab();
+      return elementosTab();
     case "ia":
       return iaTab();
     case "ajustes":
@@ -538,12 +539,19 @@ async function runPhotoSearch(query: string): Promise<void> {
   mountHome(app);
   const result = await unsplashSearch(query, store.state.settings.unsplashKey);
   photoCache = { query, photos: result.photos, hint: result.hint };
-  if (store.state.homeTab === "fotos") mountHome(app);
+  if (store.state.homeTab === "elementos" || store.state.homeTab === "fotos") mountHome(app);
 }
 
-function createWithElement(build: (page: { width: number; height: number }) => void): void {
-  store.createProject("Novo projeto", 1920, 1080);
-  build({ width: 1920, height: 1080 });
+/**
+ * Insere um elemento no projeto atual. Se o projeto aberto já tem trabalho,
+ * ele é preservado — só criamos um novo quando o atual está vazio.
+ */
+function createWithElement(build: (page: { width: number; height: number }) => void, name = "Novo projeto"): void {
+  const project = store.state.project;
+  const hasWork = project.pages.some((page) => page.elements.length > 0);
+  if (!hasWork) store.createProject(name, 1920, 1080);
+  const page = store.page;
+  build({ width: page.width, height: page.height });
   store.patch({ screen: "editor" });
 }
 
@@ -554,7 +562,7 @@ function onAction(event: Event, node: HTMLElement): void {
   if (action === "tab") {
     const tab = node.dataset.tab as never;
     store.patch({ homeTab: tab });
-    if (node.dataset.tab === "fotos" && !photoCache) {
+    if ((tab === "elementos" || node.dataset.tab === "fotos") && !photoCache) {
       photoQuery = "";
       void runPhotoSearch("");
     }
@@ -673,7 +681,7 @@ function onAction(event: Event, node: HTMLElement): void {
       el.fit = "cover";
       el.name = photo.description.slice(0, 30);
       store.addElement(el);
-    });
+    }, photo.description.slice(0, 40) || "Foto");
     if (photo.provider === "unsplash") store.toast(`Foto de ${photo.author} — mantenha o crédito ao publicar.`, "info");
     return;
   }

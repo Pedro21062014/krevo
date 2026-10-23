@@ -51,7 +51,7 @@ Tauri) e **TypeScript** (interface), que junta no mesmo app:
 | compor **imagens** | arrastar e soltar, corte cover/contain, máscaras, sombras, ícones |
 | trabalhar com **vídeo** | solta o vídeo no canvas, define capa e exporta o frame |
 | ter **elementos prontos** | 10 templates, 25 ícones, 10 gradientes, 8 paletas |
-| buscar **fotos** | Unsplash com a sua chave + acervo local offline |
+| buscar **fotos** | Unsplash com a sua chave + acervo local, dentro da aba Elementos |
 | criar com **IA** | agente que desenha no canvas — **grátis sem chave** ou com a **sua** API (10 provedores) |
 | abrir rápido | app nativo Tauri: abre em menos de 1 s, ~8 MB, sem Electron |
 
@@ -69,7 +69,9 @@ Tudo local. Sem cadastro, sem assinatura, sem telemetria.
 - **Skeleton loader** enquanto os projetos recentes carregam.
 - **Projetos recentes** com miniatura real da primeira página, contagem de
   páginas e tempo relativo.
-- Abas: **Projetos · Templates · Elementos · Fotos · Agente de IA · Ajustes**.
+- Abas: **Projetos · Templates · Elementos · Agente de IA** — as fotos do Unsplash
+  e o acervo local agora vivem dentro de *Elementos*, junto de formas, gradientes,
+  ícones e paletas (um clique insere no design atual, sem trocar de projeto).
 
 <img src="site/assets/app-home.jpg" alt="Tela inicial do Krevo" width="100%" />
 
@@ -83,7 +85,13 @@ Tudo local. Sem cadastro, sem assinatura, sem telemetria.
 - Barra de ferramentas vertical (selecionar, mão, texto, retângulo, elipse,
   imagem, vídeo) e painéis de páginas/camadas à esquerda.
 - **Hover** em qualquer elemento antes de selecionar e **edição de texto no
-  lugar** (duplo clique; `Esc` cancela, `⌘↵` confirma).
+  lugar** (duplo clique; clique fora, `Enter` ou `⌘↵` confirmam; `⇧Esc` descarta).
+- **Arraste fluido**: o canvas reaproveita os nós (a mídia não recarrega e nada
+  pisca) e os painéis só repintam quando o movimento termina.
+- **Menu de contexto** (botão direito) com editar texto, duplicar, copiar/colar,
+  ordem das camadas, bloquear, ocultar e excluir.
+- **Painel de atalhos** com `?`, além de `⌘C/⌘V`, `⌘[`/`⌘]`, `⌘⇧L`, `⌘⇧H`,
+  `⌘⇧G`, `⌘0`, `⌘+`/`⌘−`.
 - Histórico de 80 estados (⌘Z / ⇧⌘Z), grade opcional, guias de alinhamento.
 - Importação por arraste: imagens, vídeos, `.krevo` e **PDFs**.
 
@@ -172,9 +180,9 @@ Os instaladores são gerados automaticamente pelo GitHub Actions a cada push em
 
 | Plataforma | Arquivos | Como instalar |
 |---|---|---|
-| **Windows 10/11 (x64)** | `Krevo_0.2.0_x64-setup.exe`, `Krevo_0.2.0_x64_en-US.msi` | execute o instalador (por usuário) |
-| **macOS 10.15+** | `Krevo_0.2.0_universal.dmg` (Intel + Apple Silicon) | abra o `.dmg` e arraste para Aplicativos |
-| **Linux** | `Krevo_0.2.0_amd64.deb`, `Krevo_0.2.0_amd64.AppImage` | `sudo dpkg -i` ou `chmod +x` no AppImage |
+| **Windows 10/11 (x64)** | `Krevo_0.2.1_x64-setup.exe`, `Krevo_0.2.1_x64_en-US.msi` | execute o instalador (por usuário) |
+| **macOS 10.15+** | `Krevo_0.2.1_universal.dmg` (Intel + Apple Silicon) | abra o `.dmg` e arraste para Aplicativos |
+| **Linux** | `Krevo_0.2.1_amd64.deb`, `Krevo_0.2.1_amd64.AppImage` | `sudo dpkg -i` ou `chmod +x` no AppImage |
 
 Os builds **não são assinados**. No macOS use botão direito → *Abrir*; no Windows
 o SmartScreen pode pedir *Mais informações → Executar assim mesmo*.

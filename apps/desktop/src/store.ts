@@ -120,6 +120,7 @@ class Store {
   state: State;
   private listeners = new Set<(s: State) => void>();
   private past: string[] = [];
+  private clipboard: Element[] = [];
   private future: string[] = [];
 
   constructor() {
@@ -355,6 +356,37 @@ class Store {
     }
     this.touch();
     this.emit();
+  }
+
+  /** Copia os elementos selecionados para a área de transferência interna. */
+  copySelection(): number {
+    const items = this.selected.map((el) => JSON.parse(JSON.stringify(el)) as Element);
+    if (!items.length) return 0;
+    this.clipboard = items;
+    return items.length;
+  }
+
+  /** Cola a área de transferência interna, deslocando um pouco. */
+  pasteClipboard(): number {
+    if (!this.clipboard.length) return 0;
+    this.pushHistory();
+    const copies = this.clipboard.map((source, index) => ({
+      ...(JSON.parse(JSON.stringify(source)) as Element),
+      id: uid("el"),
+      x: source.x + 24 + index * 4,
+      y: source.y + 24 + index * 4,
+      locked: false,
+    }));
+    this.page.elements.push(...copies);
+    this.state.selection = copies.map((el) => el.id);
+    this.touch();
+    this.persistRecent();
+    this.emit();
+    return copies.length;
+  }
+
+  get hasClipboard(): boolean {
+    return this.clipboard.length > 0;
   }
 
   deleteSelected(): void {

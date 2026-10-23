@@ -47,63 +47,89 @@ export function textCss(el: Element): string {
     .join(";");
 }
 
-/** Cria o nó DOM de um elemento (usado no canvas e nas miniaturas). */
-export function renderElement(el: Element, interactive = false): HTMLElement {
-  const node = document.createElement("div");
+/**
+ * Aplica um elemento em um nó já existente, reaproveitando mídia e texto.
+ *
+ * O canvas repinta a cada movimento do mouse; recriar o nó faria as imagens
+ * recarregarem (era o que fazia os elementos "sumirem" durante o arraste).
+ */
+export function applyElement(node: HTMLElement, el: Element, interactive = false): void {
+  const kindChanged = node.dataset.kind !== el.kind;
+  if (kindChanged) node.replaceChildren();
   node.className = `kf-el ${el.kind}`;
   node.dataset.id = el.id;
+  node.dataset.kind = el.kind;
   node.style.cssText = elementCss(el);
 
   switch (el.kind) {
     case "text": {
-      const span = document.createElement("span");
+      let span = node.querySelector<HTMLElement>(":scope > span");
+      if (!span) {
+        span = document.createElement("span");
+        node.appendChild(span);
+      }
       span.style.cssText = `display:block;width:100%;${textCss(el)}`;
-      span.textContent = el.text?.content ?? "";
       node.style.cssText += `;${textCss(el)}`;
-      node.appendChild(span);
+      const content = el.text?.content ?? "";
+      if (span.getAttribute("contenteditable") !== "true" && span.textContent !== content) {
+        span.textContent = content;
+      }
       break;
     }
     case "image":
     case "video": {
-      if (el.src) {
-        if (el.kind === "video" && el.src.startsWith("data:video")) {
+      const src = el.src ?? "";
+      if (!src) {
+        node.replaceChildren();
+        node.style.background =
+          "repeating-linear-gradient(45deg,#20232e,#20232e 10px,#272b38 10px,#272b38 20px)";
+        node.dataset.src = "";
+        break;
+      }
+      if (node.dataset.src !== src || kindChanged) {
+        node.replaceChildren();
+        if (el.kind === "video" && src.startsWith("data:video")) {
           const video = document.createElement("video");
-          video.src = el.src;
+          video.src = src;
           video.muted = true;
           video.loop = true;
           video.playsInline = true;
           video.autoplay = true;
-          video.style.objectFit = el.fit ?? "cover";
           node.appendChild(video);
         } else {
           const img = document.createElement("img");
-          img.src = el.src;
+          img.src = src;
           img.alt = el.name || "Imagem";
-          img.style.objectFit = el.fit ?? "cover";
           img.draggable = false;
           node.appendChild(img);
         }
-      } else {
-        node.style.background =
-          "repeating-linear-gradient(45deg,#20232e,#20232e 10px,#272b38 10px,#272b38 20px)";
+        node.dataset.src = src;
       }
+      node.querySelectorAll<HTMLElement>("img, video").forEach((media) => {
+        media.style.objectFit = el.fit ?? "cover";
+      });
       if (el.radius) node.style.overflow = "hidden";
       break;
     }
     case "line": {
       const thickness = el.stroke?.width ?? 2;
       node.style.height = `${Math.max(1, thickness)}px`;
-      node.style.background = el.fill ? toCss(el.fill as never) : el.stroke?.color ?? "#000";
+      node.style.background = el.fill ? toCss(el.fill as never) : (el.stroke?.color ?? "#000");
       break;
     }
     case "icon": {
       if (el.src) {
-        const img = document.createElement("img");
-        img.src = el.src;
-        img.style.width = "100%";
-        img.style.height = "100%";
-        img.style.objectFit = "contain";
-        node.appendChild(img);
+        let img = node.querySelector<HTMLImageElement>("img");
+        if (!img || img.getAttribute("src") !== el.src) {
+          node.replaceChildren();
+          img = document.createElement("img");
+          img.src = el.src;
+          img.draggable = false;
+          img.style.width = "100%";
+          img.style.height = "100%";
+          img.style.objectFit = "contain";
+          node.appendChild(img);
+        }
       }
       break;
     }
@@ -111,9 +137,14 @@ export function renderElement(el: Element, interactive = false): HTMLElement {
       break;
   }
 
-  if (!interactive) {
-    node.style.pointerEvents = "none";
-  }
+  if (!interactive) node.style.pointerEvents = "none";
+  else node.style.pointerEvents = "";
+}
+
+/** Cria o nó DOM de um elemento (usado no canvas e nas miniaturas). */
+export function renderElement(el: Element, interactive = false): HTMLElement {
+  const node = document.createElement("div");
+  applyElement(node, el, interactive);
   return node;
 }
 

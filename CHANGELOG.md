@@ -4,6 +4,32 @@ Todas as mudanças importantes do Krevo ficam neste arquivo.
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 versionamento semântico.
 
+## [0.2.1] — 2026-10-23
+
+### Corrigido
+
+- **Edição de texto** agora confirma ao clicar fora, com `Enter` ou `⌘↵` — antes o
+  texto digitado voltava ao sair do modo de edição (`⇧Esc` descarta de propósito).
+- **Arraste travado**: o canvas passou a reaproveitar os nós dos elementos em vez
+  de recriá-los a cada movimento. As imagens não recarregam mais (era isso que
+  fazia os elementos "sumirem" por um instante) e os painéis de páginas, camadas e
+  propriedades só repintam ao soltar o mouse. Movimentos agrupados em um quadro.
+- Fotografias eram aplicadas em um projeto novo; agora entram no design aberto.
+
+### Adicionado
+
+- **Menu de contexto** com o botão direito: editar texto, duplicar, copiar/colar,
+  trazer para frente / avançar / recuar / enviar para trás, bloquear, ocultar e
+  excluir. No vazio do canvas: inserir elementos, colar, grade, ajustar à tela.
+- **Painel de atalhos** (`?`) com todas as combinações, e novos atalhos:
+  `⌘C/⌘V`, `⌘[`/`⌘]`, `⌘⇧[`/`⌘⇧]`, `⌘⇧L`, `⌘⇧H`, `⌘⇧G`, `⌘0`, `⌘+`/`⌘−`.
+- Área de transferência interna com cópia deslocada ao colar.
+
+### Mudado
+
+- A aba **Fotos** foi incorporada em **Elementos**: formas, gradientes, ícones,
+  fotos e paletas no mesmo lugar, como no Canva. Menos navegação, mais canvas.
+
 ## [0.2.0] — 2026-10-23
 
 ### Adicionado
