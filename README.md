@@ -155,7 +155,7 @@ Os instaladores são gerados automaticamente pelo GitHub Actions a cada push em
 | Plataforma | Arquivos | Como instalar |
 |---|---|---|
 | **Windows 10/11 (x64)** | `Krevo_0.1.0_x64-setup.exe`, `Krevo_0.1.0_x64_en-US.msi` | execute o instalador (por usuário) |
-| **macOS 10.15+** | `Krevo_0.1.0_x64.dmg` (Intel), `Krevo_0.1.0_aarch64.dmg` (Apple Silicon) | abra o `.dmg` e arraste para Aplicativos |
+| **macOS 10.15+** | `Krevo_0.1.0_aarch64.dmg` (Apple Silicon), `Krevo_0.1.0_x64.dmg` (Intel) | abra o `.dmg` e arraste para Aplicativos |
 | **Linux** | `Krevo_0.1.0_amd64.deb`, `Krevo_0.1.0_amd64.AppImage` | `sudo dpkg -i` ou `chmod +x` no AppImage |
 
 Os builds **não são assinados**. No macOS use botão direito → *Abrir*; no Windows
