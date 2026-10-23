@@ -9,6 +9,7 @@ import "./styles.css";
 import { store } from "./store";
 import { EditorView } from "./ui/editor";
 import { mountHome } from "./ui/home";
+import { openCreateDialog } from "./ui/create";
 
 const app = document.getElementById("app");
 if (!app) throw new Error("#app não encontrado");
@@ -53,7 +54,7 @@ window.addEventListener("keydown", (event) => {
   const key = event.key.toLowerCase();
   if (key === "n") {
     event.preventDefault();
-    store.createProject("Novo projeto", 1920, 1080);
+    openCreateDialog();
   }
   if (key === "," && store.state.screen === "home") {
     event.preventDefault();

@@ -17,6 +17,7 @@ export const icons = {
   circle: wrap('<circle cx="12" cy="12" r="8.5"/>'),
   line: wrap('<path d="M4 19L20 5"/>'),
   image: wrap('<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M21 16l-5-5-6 6"/><circle cx="8.5" cy="9.5" r="1.6"/>'),
+  record: wrap('<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.4" fill="currentColor" stroke="none"/>'),
   video: wrap('<rect x="2.5" y="6" width="14" height="12" rx="3"/><path d="M16.5 12l5-3v9l-5-3z"/>'),
   undo: wrap('<path d="M9 7H5V3"/><path d="M5.5 7a8 8 0 113.2 12"/>'),
   redo: wrap('<path d="M15 7h4V3"/><path d="M18.5 7a8 8 0 10-3.2 12"/>'),

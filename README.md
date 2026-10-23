@@ -49,9 +49,10 @@ Tauri) e **TypeScript** (interface), que junta no mesmo app:
 | editar/gerar **PDF** | importa PDFs (até 30 páginas) e exporta PDF **vetorial** |
 | montar **apresentações** | páginas em 16:9, A4, story, banner… com miniaturas instantâneas |
 | compor **imagens** | arrastar e soltar, corte cover/contain, máscaras, sombras, ícones |
-| trabalhar com **vídeo** | solta o vídeo no canvas (blob local, sem travar), define enquadramento e capa |
+| trabalhar com **vídeo** | solta o vídeo no canvas (blob local, sem travar) ou **grava a tela/câmera**, define enquadramento e capa |
 | ter **elementos prontos** | 10 templates, 25 ícones, 10 gradientes, 8 paletas |
 | buscar **fotos** | Unsplash com a sua chave + acervo local, dentro da aba Elementos |
+| **gravar** a tela | tela inteira, janela, aba ou webcam — com microfone, áudio do sistema e câmera em bolha |
 | criar com **IA** | agente que desenha no canvas — **grátis sem chave** ou com a **sua** API (10 provedores) |
 | abrir rápido | app nativo Tauri: abre em menos de 1 s, ~8 MB, sem Electron |
 
@@ -67,8 +68,11 @@ Tudo local. Sem cadastro, sem assinatura, sem telemetria.
   tipografia Inter, cartões de 1 px e nenhum gradiente decorativo.
 - Campo de **briefing** que já vira design + atalhos de ideia.
 - **Skeleton loader** enquanto os projetos recentes carregam.
-- **Projetos recentes** com miniatura real da primeira página, contagem de
-  páginas e tempo relativo.
+- **Projetos recentes** com miniatura real (JPEG gerado pelo renderizador em
+  canvas, guardado fora do projeto), contagem de páginas e tempo relativo.
+- **Criar design em duas etapas** (`⌘N` ou “Novo”): primeiro o tipo de mídia
+  (imagem/social, vídeo, apresentação, documento, impressão, tamanho próprio) e
+  depois o formato exato — o projeto já nasce com a mídia padrão na medida.
 - Abas: **Projetos · Templates · Elementos · Agente de IA** — as fotos do Unsplash
   e o acervo local agora vivem dentro de *Elementos*, junto de formas, gradientes,
   ícones e paletas (um clique insere no design atual, sem trocar de projeto).
@@ -186,9 +190,9 @@ Os instaladores são gerados automaticamente pelo GitHub Actions a cada push em
 
 | Plataforma | Arquivos | Como instalar |
 |---|---|---|
-| **Windows 10/11 (x64)** | `Krevo_0.3.0_x64-setup.exe`, `Krevo_0.3.0_x64_en-US.msi` | execute o instalador (por usuário) |
-| **macOS 10.15+** | `Krevo_0.3.0_universal.dmg` (Intel + Apple Silicon) | abra o `.dmg` e arraste para Aplicativos |
-| **Linux** | `Krevo_0.3.0_amd64.deb`, `Krevo_0.3.0_amd64.AppImage` | `sudo dpkg -i` ou `chmod +x` no AppImage |
+| **Windows 10/11 (x64)** | `Krevo_0.4.0_x64-setup.exe`, `Krevo_0.4.0_x64_en-US.msi` | execute o instalador (por usuário) |
+| **macOS 10.15+** | `Krevo_0.4.0_universal.dmg` (Intel + Apple Silicon) | abra o `.dmg` e arraste para Aplicativos |
+| **Linux** | `Krevo_0.4.0_amd64.deb`, `Krevo_0.4.0_amd64.AppImage` | `sudo dpkg -i` ou `chmod +x` no AppImage |
 
 Os builds **não são assinados**. No macOS use botão direito → *Abrir*; no Windows
 o SmartScreen pode pedir *Mais informações → Executar assim mesmo*.
@@ -322,6 +326,23 @@ Relatório A4 · Currículo minimal · Banner LinkedIn · Certificado · Card de
 Em branco.
 
 ---
+
+### Gravação de tela e câmera
+
+- `⌘⇧R` (ou o botão ⏺ da barra lateral, o inspetor da página, ou o menu de
+  contexto) abre o estúdio de gravação.
+- Fontes: **tela inteira**, **janela**, **aba do navegador** ou **câmera**.
+- Qualidade: 720p 24 fps, 1080p 30 fps, 1080p 60 fps ou resolução original
+  (até 4K) — o arquivo sai em WebM/MP4 conforme o suporte do sistema.
+- Áudio: **microfone** (narração) e **áudio do sistema**, misturados num único
+  stream; opcionalmente a **câmera em bolha** sobre a captura (composição em
+  canvas, bolha circular no canto).
+- Contagem regressiva de 0/3/5 s, cronômetro ao vivo, **pausar/retomar** e
+  finalização automática se você encerrar o compartilhamento pelo navegador.
+- Prévia com duração, resolução, tamanho e formato: **baixar** o arquivo ou
+  **inserir no design** (entra como `blob:`, do mesmo jeito que um vídeo
+  importado — sem travar).
+- Tudo local: nenhum frame sai da sua máquina.
 
 ## Atalhos
 

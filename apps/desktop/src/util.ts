@@ -80,8 +80,8 @@ export function readFileAsDataUrl(file: File): Promise<string> {
   });
 }
 
-/** Arquivos acima deste tamanho entram como object URL (evita base64 gigante). */
-const HEAVY_MEDIA_BYTES = 1.5 * 1024 * 1024;
+/** Lado máximo de uma imagem importada (acima disso ela é reduzida). */
+const MAX_IMAGE_SIDE = 3600;
 
 /** Object URLs vivos nesta sessão, para liberar depois. */
 const objectUrls = new Map<string, File>();
@@ -109,13 +109,54 @@ export function releaseObjectUrl(src: string): void {
  * Imagens pequenas continuam como data URL, que já vai pronta para o PDF.
  */
 export async function mediaSource(file: File): Promise<string> {
-  const isVideo = file.type.startsWith("video/");
-  if (isVideo || file.size > HEAVY_MEDIA_BYTES) {
-    const url = URL.createObjectURL(file);
-    objectUrls.set(url, file);
-    return url;
+  // Tudo entra como object URL. Base64 no estado significaria copiar megabytes
+  // a cada passo do histórico e a cada alteração — era isso que travava a
+  // interface ao importar mídia. O data URL só nasce na hora de salvar/exportar.
+  const prepared = file.type.startsWith("image/") ? await shrinkImage(file, MAX_IMAGE_SIDE) : file;
+  const url = URL.createObjectURL(prepared);
+  objectUrls.set(url, prepared);
+  return url;
+}
+
+/**
+ * Reduz fotos gigantes (ex.: 8000 px do celular) antes de entrar no canvas.
+ * Mantém PNG/transparência como PNG e o resto como JPEG.
+ */
+export async function shrinkImage(file: File, maxDim = MAX_IMAGE_SIDE): Promise<File> {
+  try {
+    if (typeof createImageBitmap !== "function") return file;
+    const bitmap = await createImageBitmap(file);
+    const longest = Math.max(bitmap.width, bitmap.height);
+    if (longest <= maxDim) {
+      bitmap.close();
+      return file;
+    }
+    const scale = maxDim / longest;
+    const w = Math.max(1, Math.round(bitmap.width * scale));
+    const h = Math.max(1, Math.round(bitmap.height * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      bitmap.close();
+      return file;
+    }
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(bitmap, 0, 0, w, h);
+    bitmap.close();
+    const keepPng = file.type === "image/png" || file.type === "image/webp";
+    const type = keepPng ? file.type : "image/jpeg";
+    const blob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob(resolve, type, keepPng ? undefined : 0.92);
+    });
+    if (!blob) return file;
+    const ext = keepPng ? (file.type === "image/webp" ? ".webp" : ".png") : ".jpg";
+    return new File([blob], file.name.replace(/\.[^.]+$/, "") + ext, { type });
+  } catch {
+    return file;
   }
-  return readFileAsDataUrl(file);
 }
 
 /** Troca todos os `blob:` de um projeto por data URLs (usado ao salvar). */

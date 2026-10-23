@@ -17,6 +17,8 @@ IMAGES = {
     "{{AGENT}}": ("app-agent.jpg", "image/jpeg"),
     "{{AI}}": ("app-ai.jpg", "image/jpeg"),
     "{{ELEMENTS}}": ("app-elements.jpg", "image/jpeg"),
+    "{{CREATE}}": ("app-create.jpg", "image/jpeg"),
+    "{{RECORD}}": ("app-record.jpg", "image/jpeg"),
     "{{MENU}}": ("app-menu.jpg", "image/jpeg"),
     "{{SHORTCUTS}}": ("app-shortcuts.jpg", "image/jpeg"),
     "{{LOGO_WORD}}": ("logo-light.png", "image/png"),

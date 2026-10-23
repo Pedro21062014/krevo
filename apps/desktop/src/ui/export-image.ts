@@ -78,7 +78,8 @@ function wrapLines(ctx: CanvasRenderingContext2D, text: string, maxWidth: number
 }
 
 /** Desenha a página inteira em um canvas e devolve o data URL do PNG. */
-export async function renderPageToPng(page: Page, scale = 2): Promise<string> {
+/** Desenha a página num canvas (base do PNG e das miniaturas). */
+export async function renderPageCanvas(page: Page, scale = 2): Promise<HTMLCanvasElement> {
   const canvas = document.createElement("canvas");
   canvas.width = Math.round(page.width * scale);
   canvas.height = Math.round(page.height * scale);
@@ -199,7 +200,23 @@ export async function renderPageToPng(page: Page, scale = 2): Promise<string> {
     ctx.restore();
   }
 
+  return canvas;
+}
+
+/** PNG da página em data URL. */
+export async function renderPageToPng(page: Page, scale = 2): Promise<string> {
+  const canvas = await renderPageCanvas(page, scale);
   return canvas.toDataURL("image/png");
+}
+
+/**
+ * Miniatura leve para os cartões de "Projetos recentes" (JPEG pequeno).
+ * Assim a tela inicial não precisa montar a página inteira em DOM.
+ */
+export async function pageThumbnail(page: Page, maxWidth = 520): Promise<string> {
+  const scale = Math.min(1, maxWidth / Math.max(1, page.width));
+  const canvas = await renderPageCanvas(page, scale);
+  return canvas.toDataURL("image/jpeg", 0.62);
 }
 
 /** Baixa o PNG da página. */

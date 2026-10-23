@@ -141,6 +141,8 @@ export const SHORTCUTS: { group: string; items: [string, string][] }[] = [
       ["⌘⇧G", "Grade"],
       ["⌘S", "Salvar projeto"],
       ["⇧⌘E", "Exportar PDF"],
+      ["⌘⇧R", "Gravar tela / câmera"],
+      ["⌘N", "Criar design (tipo + formato)"],
       ["Botão direito", "Menu de contexto"],
     ],
   },

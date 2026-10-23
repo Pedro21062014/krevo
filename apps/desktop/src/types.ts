@@ -157,4 +157,6 @@ export interface ProjectSummary {
   updatedAt: string;
   pages: number;
   page: Page;
+  /** Miniatura JPEG (data URL) gerada pelo editor. */
+  thumb?: string;
 }

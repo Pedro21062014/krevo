@@ -22,6 +22,7 @@ import { uid } from "./util";
 
 const STORAGE_KEY = "krevo.v1";
 const MAX_HISTORY = 80;
+const MAX_THUMBS = 12;
 
 export interface Toast {
   id: string;
@@ -124,6 +125,24 @@ function stripHeavyMedia(project: Project): Project {
   return clone;
 }
 
+/** Miniaturas por projeto (JPEG pequeno, guardado fora dos projetos). */
+function loadThumbs(): Record<string, string> {
+  try {
+    const raw = localStorage.getItem(`${STORAGE_KEY}.thumbs`);
+    return raw ? (JSON.parse(raw) as Record<string, string>) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveThumbs(thumbs: Record<string, string>): void {
+  try {
+    localStorage.setItem(`${STORAGE_KEY}.thumbs`, JSON.stringify(thumbs));
+  } catch {
+    /* sem espaço: as miniaturas são só um extra */
+  }
+}
+
 function loadRecent(): ProjectSummary[] {
   try {
     const raw = localStorage.getItem(`${STORAGE_KEY}.recent`);
@@ -147,6 +166,7 @@ class Store {
   private past: string[] = [];
   private clipboard: Element[] = [];
   private future: string[] = [];
+  private thumbs: Record<string, string> = loadThumbs();
 
   constructor() {
     this.state = {
@@ -162,7 +182,7 @@ class Store {
       settings: loadSettings(),
       toasts: [],
       loadingHome: true,
-      recent: loadRecent(),
+      recent: loadRecent().map((r) => ({ ...r, thumb: this.thumbs[r.id] })),
       chat: [],
       agentBusy: false,
       agentModel: "",
@@ -522,6 +542,19 @@ class Store {
     this.emit();
   }
 
+  /** Guarda a miniatura de um projeto (JPEG pequeno). */
+  setThumb(id: string, dataUrl: string): void {
+    if (!id || !dataUrl) return;
+    this.thumbs[id] = dataUrl;
+    const keys = Object.keys(this.thumbs);
+    if (keys.length > MAX_THUMBS) {
+      for (const key of keys.slice(0, keys.length - MAX_THUMBS)) delete this.thumbs[key];
+    }
+    saveThumbs(this.thumbs);
+    const item = this.state.recent.find((r) => r.id === id);
+    if (item) item.thumb = dataUrl;
+  }
+
   persistRecent(): void {
     try {
       const raw = localStorage.getItem(`${STORAGE_KEY}.recent`);
@@ -543,6 +576,7 @@ class Store {
         updatedAt: p.updatedAt,
         pages: p.pages.length,
         page: p.pages[0],
+        thumb: this.thumbs[p.id],
       }));
     } catch (error) {
       console.warn("não consegui salvar os recentes", error);

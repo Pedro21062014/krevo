@@ -21,8 +21,9 @@ import type { Element, Page, TextAlign } from "../types";
 import { clamp, esc, materializeMedia, mediaSource, toCss } from "../util";
 import { agentPanelHtml, bindAgentPanel } from "./agent";
 import { icons } from "./icons";
-import { downloadPagePng } from "./export-image";
+import { downloadPagePng, pageThumbnail } from "./export-image";
 import { openMenuAt, openShortcuts } from "./menu";
+import { displayCaptureSupported, openRecorder, recorderSupported, type RecordedVideo } from "./record";
 import { applyElement, renderElement, renderThumb } from "./render";
 
 type DragMode = "move" | "resize" | "rotate" | "pan" | "marquee";
@@ -55,6 +56,7 @@ export class EditorView {
   private layersKey = "";
   private inspectorKey = "";
   private moveFrame = 0;
+  private thumbTimer = 0;
   private pendingMove: PointerEvent | null = null;
   private unsubscribe: (() => void) | null = null;
   private bound = false;
@@ -79,6 +81,7 @@ export class EditorView {
           <button class="tool ${store.state.tool === "ellipse" ? "active" : ""}" data-tool="ellipse" title="Elipse (O)">${icons.circle}</button>
           <button class="tool" data-edit="add-image" title="Inserir imagem">${icons.image}</button>
           <button class="tool" data-edit="add-video" title="Inserir vídeo">${icons.video}</button>
+          <button class="tool" data-edit="record-screen" title="Gravar tela ou câmera">${icons.record}</button>
           <span class="spacer"></span>
           <button class="tool" data-edit="undo" title="Desfazer (⌘Z)">${icons.undo}</button>
           <button class="tool" data-edit="redo" title="Refazer (⇧⌘Z)">${icons.redo}</button>
@@ -154,12 +157,16 @@ export class EditorView {
     });
     window.addEventListener("resize", this.onResize);
 
-    this.unsubscribe = store.subscribe(() => this.paintAll());
+    this.unsubscribe = store.subscribe(() => {
+      this.paintAll();
+      this.scheduleThumb();
+    });
   }
 
   destroy(): void {
     this.unsubscribe?.();
     this.unsubscribe = null;
+    window.clearTimeout(this.thumbTimer);
     window.removeEventListener("resize", this.onResize);
     this.cleanupKeys();
   }
@@ -199,6 +206,11 @@ export class EditorView {
     if (mod && event.key.toLowerCase() === "d") {
       event.preventDefault();
       store.duplicateSelected();
+      return;
+    }
+    if (mod && event.shiftKey && event.key.toLowerCase() === "r") {
+      event.preventDefault();
+      this.recordScreen();
       return;
     }
     if (mod && event.key.toLowerCase() === "a") {
@@ -429,6 +441,7 @@ export class EditorView {
   private async onToolbar(action: string): Promise<void> {
     switch (action) {
       case "home":
+        await this.refreshThumb();
         store.persistRecent();
         store.patch({ screen: "home", loadingHome: false });
         break;
@@ -459,6 +472,9 @@ export class EditorView {
       case "add-video":
         this.pickFile("video/*");
         break;
+      case "record-screen":
+        this.recordScreen();
+        break;
       case "toggle-grid":
         store.patch({ showGrid: !store.state.showGrid });
         break;
@@ -473,6 +489,25 @@ export class EditorView {
         break;
       default:
         break;
+    }
+  }
+
+  /** Gera a miniatura do projeto (para a lista de recentes) sem travar a UI. */
+  private scheduleThumb(): void {
+    window.clearTimeout(this.thumbTimer);
+    this.thumbTimer = window.setTimeout(() => {
+      void this.refreshThumb();
+    }, 2000);
+  }
+
+  private async refreshThumb(): Promise<void> {
+    try {
+      const page = store.page;
+      if (!page) return;
+      const dataUrl = await pageThumbnail(page, 520);
+      store.setThumb(store.state.project.id, dataUrl);
+    } catch {
+      /* miniatura é opcional */
     }
   }
 
@@ -786,6 +821,7 @@ export class EditorView {
         { label: "Duplicar", shortcut: "⌘D", action: () => store.duplicateSelected() },
         { label: "Copiar", shortcut: "⌘C", action: () => store.copySelection() },
         { label: "Colar", shortcut: "⌘V", disabled: !store.hasClipboard, action: () => store.pasteClipboard() },
+        { label: "Gravar tela / câmera", shortcut: "⌘⇧R", action: () => this.recordScreen() },
         { separator: true },
         { label: "Trazer para frente", shortcut: "⌘⇧]", action: () => store.reorder(el.id, "front") },
         { label: "Avançar", shortcut: "⌘]", action: () => store.reorder(el.id, "forward") },
@@ -824,6 +860,8 @@ export class EditorView {
       { label: "Inserir retângulo", shortcut: "R", action: () => this.addQuick("rect") },
       { label: "Inserir elipse", shortcut: "O", action: () => this.addQuick("ellipse") },
       { label: "Inserir imagem…", action: () => this.pickFile("image/*") },
+      { label: "Inserir vídeo…", action: () => this.pickFile("video/*") },
+      { label: "Gravar tela / câmera", shortcut: "⌘⇧R", action: () => this.recordScreen() },
       { separator: true },
       { label: "Colar", shortcut: "⌘V", disabled: !store.hasClipboard, action: () => store.pasteClipboard() },
       { label: "Selecionar tudo", shortcut: "⌘A", action: () => store.select(store.page.elements.map((e) => e.id)) },
@@ -872,7 +910,7 @@ export class EditorView {
     this.stageWrap?.classList.remove("drop-target");
     const files = Array.from(event.dataTransfer?.files ?? []);
     if (!files.length) return;
-    const point = this.canvasPoint(event as unknown as PointerEvent);
+    let point = this.canvasPoint(event as unknown as PointerEvent);
     for (const file of files) {
       if (file.name.endsWith(".krevo") || file.type === "application/json") {
         const text = await file.text();
@@ -889,33 +927,10 @@ export class EditorView {
         await this.importPdf(file);
         continue;
       }
-      if (file.type.startsWith("video/")) {
-        store.toast(`Carregando vídeo (${Math.round(file.size / 1048576)} MB)…`, "info");
-        const src = await mediaSource(file);
-        const el = baseElement("video", point.x, point.y, 480, 270);
-        el.src = src;
-        el.fit = "cover";
-        el.name = file.name;
-        store.addElement(el);
-        store.toast("Vídeo inserido. Use o inspetor para trocar o enquadramento.", "success");
+      if (file.type.startsWith("video/") || file.type.startsWith("image/")) {
+        await this.importMedia(file, undefined, point);
+        point = { x: point.x + 28, y: point.y + 28 };
         continue;
-      }
-      if (file.type.startsWith("image/")) {
-        const data = await mediaSource(file);
-        const img = new Image();
-        img.src = data;
-        await new Promise((resolve) => {
-          img.onload = resolve;
-          img.onerror = resolve;
-        });
-        const maxW = store.page.width * 0.6;
-        const ratio = img.width && img.height ? img.height / img.width : 0.66;
-        const w = Math.min(img.width || maxW, maxW);
-        const el = baseElement("image", point.x, point.y, w, w * ratio);
-        el.src = data;
-        el.fit = "cover";
-        el.name = file.name;
-        store.addElement(el);
       }
     }
   }
@@ -1570,6 +1585,7 @@ export class EditorView {
         <button class="btn small" data-inspector="add-rect">${icons.square} Forma</button>
         <button class="btn small" data-inspector="add-image">${icons.image} Imagem</button>
         <button class="btn small" data-inspector="add-video">${icons.video} Vídeo</button>
+        <button class="btn small" data-inspector="record-screen">${icons.record} Gravar tela</button>
       </div>
       <div class="divider"></div>
       <div class="empty-note">
@@ -1697,6 +1713,9 @@ export class EditorView {
       case "add-video":
         this.pickFile("video/*");
         break;
+      case "record-screen":
+        this.recordScreen();
+        break;
       case "flip-h":
         if (el) store.updateElement(el.id, { flipH: !el.flipH });
         break;
@@ -1714,6 +1733,33 @@ export class EditorView {
     }
   }
 
+  /** Abre o estúdio de gravação (tela, janela, aba ou câmera). */
+  private recordScreen(): void {
+    if (!displayCaptureSupported() && !recorderSupported()) {
+      store.toast("Este ambiente não permite gravar. Use o aplicativo instalado.", "error");
+      return;
+    }
+    openRecorder((video) => {
+      void this.insertRecording(video);
+    });
+  }
+
+  /** Coloca a gravação no centro da página, já no tamanho da mídia. */
+  private async insertRecording(video: RecordedVideo): Promise<void> {
+    const page = store.page;
+    const src = await mediaSource(video.file);
+    const ratio = video.width && video.height ? video.height / video.width : 9 / 16;
+    const maxW = page.width * 0.64;
+    const w = Math.min(video.width || maxW, maxW);
+    const h = w * ratio;
+    const el = baseElement("video", (page.width - w) / 2, Math.max(16, (page.height - h) / 2), w, h);
+    el.src = src;
+    el.fit = "cover";
+    el.name = video.file.name;
+    store.addElement(el);
+    store.toast("Gravação inserida no design.", "success");
+  }
+
   private pickFile(accept: string, replaceId?: string): void {
     const input = document.createElement("input");
     input.type = "file";
@@ -1721,35 +1767,82 @@ export class EditorView {
     input.addEventListener("change", async () => {
       const file = input.files?.[0];
       if (!file) return;
-      const data = await mediaSource(file);
-      if (replaceId) {
-        const el = store.page.elements.find((e) => e.id === replaceId);
-        if (el) store.updateElement(replaceId, { src: data, name: file.name });
-        return;
-      }
-      const page = store.page;
-      if (file.type.startsWith("video/")) {
-        const node = baseElement("video", page.width * 0.1, page.height * 0.1, page.width * 0.4, page.width * 0.22);
-        node.src = data;
-        node.name = file.name;
-        store.addElement(node);
-        return;
-      }
+      await this.importMedia(file, replaceId);
+    });
+    input.click();
+  }
+
+  /**
+   * Importa imagem ou vídeo sem travar a interface.
+   *
+   * A mídia entra como `blob:` (nunca base64 no estado), a decodificação
+   * acontece depois do próximo frame e o elemento só é criado no fim — assim
+   * arquivos grandes não bloqueiam o arraste nem o histórico.
+   */
+  private async importMedia(file: File, replaceId?: string, point?: { x: number; y: number }): Promise<void> {
+    const isVideo = file.type.startsWith("video/");
+    const isImage = file.type.startsWith("image/");
+    if (!isVideo && !isImage) {
+      store.toast("Formato não suportado aqui. Use imagem ou vídeo.", "error");
+      return;
+    }
+    const mb = file.size / 1048576;
+    store.toast(isVideo ? `Preparando vídeo (${mb.toFixed(1)} MB)…` : `Importando ${file.name}…`, "info");
+    // Deixa o toast pintar antes de qualquer trabalho pesado.
+    await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+
+    const src = await mediaSource(file);
+
+    const page = store.page;
+    let width = 0;
+    let height = 0;
+    if (isVideo) {
+      const probe = document.createElement("video");
+      probe.preload = "metadata";
+      probe.muted = true;
+      probe.src = src;
+      width = await new Promise<number>((resolve) => {
+        const done = (): void => resolve(probe.videoWidth);
+        probe.addEventListener("loadedmetadata", done, { once: true });
+        probe.addEventListener("error", () => resolve(0), { once: true });
+        window.setTimeout(() => resolve(probe.videoWidth), 2500);
+      });
+      height = probe.videoHeight;
+    } else {
       const img = new Image();
-      img.src = data;
+      img.src = src;
       await new Promise((resolve) => {
         img.onload = resolve;
         img.onerror = resolve;
       });
-      const ratio = img.width && img.height ? img.height / img.width : 0.66;
-      const w = Math.min(img.width || page.width * 0.5, page.width * 0.5);
-      const node = baseElement("image", page.width * 0.25, page.height * 0.25, w, w * ratio);
-      node.src = data;
-      node.fit = "cover";
-      node.name = file.name;
-      store.addElement(node);
-    });
-    input.click();
+      width = img.naturalWidth;
+      height = img.naturalHeight;
+      if (!width || !height) {
+        store.toast("Não consegui ler essa imagem. Tente outro arquivo.", "error");
+        return;
+      }
+    }
+
+    if (replaceId) {
+      store.updateElement(replaceId, { src, name: file.name });
+      store.toast("Mídia trocada.", "success");
+      return;
+    }
+
+    const ratio = width && height ? height / width : isVideo ? 9 / 16 : 0.66;
+    const maxW = page.width * (isVideo ? 0.64 : 0.5);
+    const w = Math.min(width || maxW, maxW);
+    const h = Math.max(24, w * ratio);
+    const origin = point ?? { x: (page.width - w) / 2, y: (page.height - h) / 2 };
+    const x = clamp(origin.x, 0, Math.max(0, page.width - w));
+    const y = clamp(origin.y, 0, Math.max(0, page.height - h));
+
+    const node = baseElement(isVideo ? "video" : "image", x, y, w, h);
+    node.src = src;
+    node.fit = "cover";
+    node.name = file.name;
+    store.addElement(node);
+    store.toast(isVideo ? "Vídeo inserido." : "Imagem inserida.", "success");
   }
 
   private onInspectorChange(event: Event): void {

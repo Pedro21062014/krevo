@@ -22,12 +22,13 @@ import {
 } from "../assets";
 import { appInfo, isDesktop, PROVIDERS, unsplashSearch, type AppInfo } from "../bridge";
 import { store } from "../store";
-import type { Photo } from "../types";
+import type { Photo, ProjectSummary } from "../types";
 import { esc, formatDate } from "../util";
 import { agentMode, testAiConnection } from "./agent";
 import { kMark, logoLockup } from "./brand";
 import { icons } from "./icons";
 import { renderThumbFill } from "./render";
+import { openCreateDialog } from "./create";
 
 let photoCache: { query: string; photos: Photo[]; hint: string } | null = null;
 let photoQuery = "";
@@ -110,9 +111,14 @@ function templateCard(t: Template): string {
     </button>`;
 }
 
-function recentCard(item: { id: string; name: string; updatedAt: string; pages: number; page: unknown }): string {
-  const holder = document.createElement("div");
-  holder.appendChild(renderThumbFill(item.page as never, 480, 300));
+function recentCard(item: ProjectSummary): string {
+  let holder = document.createElement("div");
+  if (item.thumb) {
+    holder.innerHTML = `<img src="${item.thumb}" alt="${esc(item.name)}" style="width:100%;height:100%;object-fit:cover;display:block" />`;
+  } else {
+    holder = document.createElement("div");
+    holder.appendChild(renderThumbFill(item.page as never, 480, 300));
+  }
   return `
     <div class="card" style="cursor:pointer" data-action="open-recent" data-id="${item.id}">
       <div class="card-thumb">
@@ -618,8 +624,8 @@ function onAction(event: Event, node: HTMLElement): void {
     return;
   }
   if (action === "new-blank") {
-    const format = FORMATS.find((f) => f.id === pendingFormat) ?? FORMATS[0];
-    store.createProject("Novo projeto", format.w, format.h);
+    // Passa pelo diálogo: tipo de mídia → formato.
+    openCreateDialog();
     return;
   }
   if (action === "pick-format") {

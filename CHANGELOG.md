@@ -4,6 +4,41 @@ Todas as mudanças importantes do Krevo ficam neste arquivo.
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 versionamento semântico.
 
+## [0.4.0] — 2026-10-23
+
+### Adicionado
+
+- **Gravação de tela e câmera** (`⌘⇧R`, botão na barra lateral, menu de contexto do
+  canvas e inspetor): escolha entre tela inteira, janela, aba do navegador ou
+  webcam; qualidade (720p 24 fps → 1080p 60 fps → resolução original, até 4K);
+  microfone com narração, áudio do sistema e **câmera em bolha** sobre a captura
+  (composição em canvas). Tem contagem regressiva opcional, cronômetro, pausar e
+  retomar, prévia com duração/resolução/tamanho e duas saídas: baixar o arquivo
+  ou **inserir no design**. Se você encerrar o compartilhamento pelo navegador, a
+  gravação é finalizada — nada é enviado para servidor.
+- **Criar design em duas etapas**: primeiro o **tipo de mídia** (imagem/social,
+  vídeo, apresentação, documento, impressão ou tamanho próprio), depois o
+  **formato** exato (1:1, 4:5, 9:16, 16:9, A4, 4K, cartão…). O diálogo lembra a
+  última escolha, sugere o nome do projeto e cria a página já com a mídia padrão
+  na medida certa. `⌘N` e o botão “Novo” abrem esse fluxo.
+- **Miniaturas reais dos projetos recentes**: o editor renderiza a página em
+  canvas e guarda um JPEG pequeno (fora dos projetos), então a tela inicial abre
+  leve, mesmo com designs que têm fotos grandes.
+
+### Corrigido
+
+- **Travamento ao importar mídia**: imagens e vídeos agora entram sempre como
+  `blob:` (object URL) — antes fotos pequenas viravam base64 dentro do estado e
+  eram copiadas a cada passo do histórico e a cada gravação no `localStorage`,
+  o que congelava a interface com arquivos de alguns MB.
+- Fotos gigantes (ex.: 4000×3000 de celular) são reduzidas automaticamente para
+  até 3600 px no lado maior, preservando PNG/transparência — importação medida em
+  ~40 ms e o arraste segue respondendo.
+- Importação por arrastar/soltar usa o mesmo caminho otimizado, com leitura de
+  metadados do vídeo (proporção correta já na inserção).
+- Importação de mídia agora informa progresso e nunca deixa o toast “congelado”
+  na tela.
+
 ## [0.3.0] — 2026-10-23
 
 ### Adicionado

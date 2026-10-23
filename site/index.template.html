@@ -230,7 +230,7 @@
     <div class="glow a"></div>
     <div class="glow b"></div>
     <div class="wrap">
-      <span class="eyebrow">Novo · versão 0.3 · kit completo de recursos</span>
+      <span class="eyebrow">Novo · versão 0.4 · gravação de tela e criação por formato</span>
       <h1>Crie tudo.<br /><span class="grad">Em um só lugar.</span></h1>
       <p class="lede">
         Krevo é o estúdio de design nativo que edita <b>PDF, apresentações, imagens, vídeo</b> e muito mais.
@@ -287,9 +287,21 @@
           <span class="tag">arrastar e soltar · camadas</span>
         </div>
         <div class="card reveal">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.4" fill="currentColor" stroke="none"/></svg></div>
+          <h3>Gravar tela e câmera</h3>
+          <p>Grave a tela inteira, uma janela, uma aba ou a webcam com microfone e áudio do sistema, câmera em bolha, contagem regressiva e pausa. Revise na prévia e insira direto no design — ou baixe o arquivo.</p>
+          <span class="tag">⌘⇧R · webm · sem upload</span>
+        </div>
+        <div class="card reveal">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="18" rx="1.6"/><rect x="14" y="7" width="7" height="10" rx="1.6"/></svg></div>
+          <h3>Criar por tipo e formato</h3>
+          <p>Escolha primeiro o tipo de mídia — imagem, vídeo, apresentação, documento, impressão — e depois o formato (1:1, 4:5, 9:16, 16:9, A4, 4K, cartão). O projeto nasce com a mídia padrão na medida certa.</p>
+          <span class="tag">⌘N · em duas etapas</span>
+        </div>
+        <div class="card reveal">
           <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="14" height="12" rx="3"/><path d="M16.5 12l5-3v9l-5-3z"/></svg></div>
           <h3>Vídeo e frames</h3>
-          <p>Solte um vídeo no canvas e trate como elemento: capa, proporção e exportação do frame atual para virar thumb ou story.</p>
+          <p>Solte um vídeo no canvas (ou grave na hora) e trate como elemento: capa, proporção e exportação do frame atual para virar thumb ou story. Arquivos grandes entram como <code>blob:</code> e não travam mais o editor.</p>
           <span class="tag">mp4 · webm · frames</span>
         </div>
         <div class="card reveal">
@@ -446,6 +458,17 @@
 
       <div class="grid g2-shots reveal" style="margin-top:22px;grid-template-columns:1fr 1fr">
         <div class="shot" style="margin-top:0">
+          <div class="shot-bar"><i></i><i></i><i></i><span class="url">krevo · criar (⌘N)</span></div>
+          <img src="{{CREATE}}" alt="Diálogo de criação do Krevo: tipo de mídia à esquerda e formato à direita" />
+        </div>
+        <div class="shot" style="margin-top:0">
+          <div class="shot-bar"><i></i><i></i><i></i><span class="url">krevo · gravar (⌘⇧R)</span></div>
+          <img src="{{RECORD}}" alt="Estúdio de gravação do Krevo com fonte, qualidade, microfone e câmera em bolha" />
+        </div>
+      </div>
+
+      <div class="grid g2-shots reveal" style="margin-top:22px;grid-template-columns:1fr 1fr">
+        <div class="shot" style="margin-top:0">
           <div class="shot-bar"><i></i><i></i><i></i><span class="url">krevo · botão direito</span></div>
           <img src="{{MENU}}" alt="Menu de contexto do Krevo com duplicar, ordem, bloquear, ocultar e excluir" />
         </div>
@@ -500,8 +523,8 @@
           </div>
           <small>Windows 10/11 · x64 · 3,4 MB</small>
           <div class="dl-links">
-            <a href="https://github.com/Pedro21062014/krevo/releases/latest/download/Krevo_0.3.0_x64-setup.exe">Instalador <span>.exe · NSIS</span></a>
-            <a href="https://github.com/Pedro21062014/krevo/releases/latest/download/Krevo_0.3.0_x64_en-US.msi">Pacote MSI <span>.msi</span></a>
+            <a href="https://github.com/Pedro21062014/krevo/releases/latest/download/Krevo_0.4.0_x64-setup.exe">Instalador <span>.exe · NSIS</span></a>
+            <a href="https://github.com/Pedro21062014/krevo/releases/latest/download/Krevo_0.4.0_x64_en-US.msi">Pacote MSI <span>.msi</span></a>
           </div>
         </div>
         <div class="dl-card reveal">
@@ -511,7 +534,7 @@
           </div>
           <small>macOS 10.15+ · binário universal</small>
           <div class="dl-links">
-            <a href="https://github.com/Pedro21062014/krevo/releases/latest/download/Krevo_0.3.0_universal.dmg">Universal (Intel + M1–M5) <span>.dmg · 9 MB</span></a>
+            <a href="https://github.com/Pedro21062014/krevo/releases/latest/download/Krevo_0.4.0_universal.dmg">Universal (Intel + M1–M5) <span>.dmg · 9 MB</span></a>
           </div>
         </div>
         <div class="dl-card reveal">
@@ -521,8 +544,8 @@
           </div>
           <small>Debian/Ubuntu · qualquer distro · 4,9 MB</small>
           <div class="dl-links">
-            <a href="https://github.com/Pedro21062014/krevo/releases/latest/download/Krevo_0.3.0_amd64.deb">Debian / Ubuntu <span>.deb</span></a>
-            <a href="https://github.com/Pedro21062014/krevo/releases/latest/download/Krevo_0.3.0_amd64.AppImage">Portátil <span>.AppImage</span></a>
+            <a href="https://github.com/Pedro21062014/krevo/releases/latest/download/Krevo_0.4.0_amd64.deb">Debian / Ubuntu <span>.deb</span></a>
+            <a href="https://github.com/Pedro21062014/krevo/releases/latest/download/Krevo_0.4.0_amd64.AppImage">Portátil <span>.AppImage</span></a>
           </div>
         </div>
       </div>
