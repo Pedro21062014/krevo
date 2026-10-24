@@ -18,7 +18,7 @@ import {
 import { exportPdf, isDesktop, saveProjectFile } from "../bridge";
 import { store } from "../store";
 import type { Element, Page, TextAlign } from "../types";
-import { clamp, esc, materializeMedia, mediaSource, toCss } from "../util";
+import { clamp, esc, hydrateProjectMedia, isImageFile, isVideoFile, materializeMedia, mediaSource, toCss } from "../util";
 import { agentPanelHtml, bindAgentPanel } from "./agent";
 import { icons } from "./icons";
 import { downloadPagePng, pageThumbnail } from "./export-image";
@@ -525,7 +525,16 @@ export class EditorView {
       const project = await materializeMedia(store.state.project);
       const result = await saveProjectFile(project);
       store.persistRecent();
-      store.toast(result === "download" ? "Projeto baixado no navegador." : `Projeto salvo em ${result}`, "success");
+      const hasVideo = store.state.project.pages.some((p) => p.elements.some((e) => e.kind === "video"));
+      const videoNote = hasVideo
+        ? " · vídeos ficam como cartão (reconecte o arquivo ao reabrir, se precisar)"
+        : "";
+      store.toast(
+        result === "download"
+          ? `Projeto baixado no navegador.${videoNote}`
+          : `Projeto salvo em ${result}${videoNote}`,
+        "success",
+      );
     } catch (error) {
       const message = (error as Error).message;
       if (message !== "Salvamento cancelado.") store.toast(message, "error");
@@ -927,6 +936,9 @@ export class EditorView {
           const parsed = JSON.parse(text) as { project?: unknown };
           const project = (parsed.project ?? parsed) as never;
           store.openProject(project);
+          // Projeto legado com mídia embutida: data: gigantes viram blob: agora,
+          // senão o histórico/repaint serializa megabytes a cada edição.
+          void hydrateProjectMedia(store.state.project).then(() => this.paintAll());
         } catch {
           store.toast("Arquivo .krevo inválido.", "error");
         }
@@ -936,7 +948,7 @@ export class EditorView {
         await this.importPdf(file);
         continue;
       }
-      if (file.type.startsWith("video/") || file.type.startsWith("image/")) {
+      if (isVideoFile(file) || isImageFile(file)) {
         await this.importMedia(file, undefined, point);
         point = { x: point.x + 28, y: point.y + 28 };
         continue;
@@ -1426,7 +1438,11 @@ export class EditorView {
         <div class="row wrap">
           ${
             el.kind === "video"
-              ? `<button class="btn small" data-inspector="toggle-video">▶ Reproduzir</button>`
+              ? `<button class="btn small" data-inspector="toggle-video">▶ Reproduzir</button>${
+                  !el.src
+                    ? `<button class="btn small primary" data-inspector="replace-media">${icons.video} Reconectar arquivo</button>`
+                    : ""
+                }`
               : ""
           }
           <button class="btn small" data-inspector="replace-media">${icons.image} Trocar arquivo</button>
@@ -1756,7 +1772,7 @@ export class EditorView {
   private toggleVideo(node: HTMLElement): void {
     const video = node.querySelector<HTMLVideoElement>("video") ?? createVideoPlayer(node);
     if (!video) {
-      store.toast("Este vídeo não pôde ser aberto pelo sistema.", "error");
+      store.toast("Sem fonte de vídeo. Selecione o elemento e troque o arquivo no inspetor.", "error");
       return;
     }
     if (!video.paused) {
@@ -1766,10 +1782,60 @@ export class EditorView {
     }
     this.pauseVideos(node);
     video.loop = true;
+    // Guarda anti-travamento: se o backend nativo (GStreamer/WebView2) não
+    // iniciar em 8 s, avisamos em vez de deixar a interface parecer congelada.
+    const guard = window.setTimeout(() => {
+      if (!video.paused) return;
+      store.toast(
+        "O vídeo não começou em 8 s — o sistema pode não ter o codec deste arquivo. MP4 (H.264) e WebM são os formatos mais seguros.",
+        "error",
+      );
+    }, 8000);
+    // O poster (quadro congelado para miniaturas/PDF) é capturado AQUI, durante
+    // a reprodução — nunca na importação, que não deve decodificar nada.
+    const onFirstFrame = (): void => {
+      if (!video.videoWidth) return;
+      video.removeEventListener("timeupdate", onFirstFrame);
+      window.clearTimeout(guard);
+      this.capturePoster(node, video);
+    };
+    video.addEventListener("timeupdate", onFirstFrame);
     video.play().then(
-      () => this.syncVideoButtons(),
-      () => store.toast("O sistema não conseguiu reproduzir este vídeo.", "error"),
+      () => {
+        window.clearTimeout(guard);
+        this.syncVideoButtons();
+      },
+      () => {
+        window.clearTimeout(guard);
+        video.removeEventListener("timeupdate", onFirstFrame);
+        this.syncVideoButtons();
+        store.toast("O sistema não conseguiu reproduzir este vídeo.", "error");
+      },
     );
+  }
+
+  /**
+   * Congela o quadro atual do vídeo como poster (data URL pequeno).
+   * Barato: a decodificação já está acontecendo porque o usuário pediu play.
+   */
+  private capturePoster(node: HTMLElement, video: HTMLVideoElement): void {
+    try {
+      const el = store.page.elements.find((e) => e.id === node.dataset.id);
+      if (!el || el.poster || !video.videoWidth) return;
+      const scale = Math.min(1, 960 / Math.max(1, video.videoWidth));
+      const w = Math.max(2, Math.round(video.videoWidth * scale));
+      const h = Math.max(2, Math.round(video.videoHeight * scale));
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.drawImage(video, 0, 0, w, h);
+      const poster = canvas.toDataURL("image/jpeg", 0.72);
+      store.updateElement(el.id, { poster }, false);
+    } catch {
+      /* poster é opcional (por exemplo, vídeo com proteção) */
+    }
   }
 
   /** Pausa todos os vídeos do canvas (menos o informado). */
@@ -1834,6 +1900,27 @@ export class EditorView {
   }
 
   /**
+   * Importa vários arquivos vindos de fora (drop nativo do Tauri, integrações).
+   * Cada arquivo é tratado pelo mesmo pipeline seguro de importMedia.
+   */
+  async importExternalFiles(files: File[], point?: { x: number; y: number }): Promise<void> {
+    let offset = { x: 0, y: 0 };
+    for (const file of files) {
+      try {
+        await this.importMedia(
+          file,
+          undefined,
+          point ? { x: point.x + offset.x, y: point.y + offset.y } : undefined,
+        );
+        offset = { x: offset.x + 28, y: offset.y + 28 };
+      } catch (error) {
+        console.error("Falha ao importar mídia", error);
+        store.toast(`Não dei conta de importar ${file.name}.`, "error");
+      }
+    }
+  }
+
+  /**
    * Importa imagem ou vídeo sem travar a interface.
    *
    * Vídeo entra como referência blob e cartão estático, sem criar <video>,
@@ -1841,8 +1928,8 @@ export class EditorView {
    * protegem de um travamento no GStreamer/WebKitGTK durante a decodificação.
    */
   private async importMedia(file: File, replaceId?: string, point?: { x: number; y: number }): Promise<void> {
-    const isVideo = file.type.startsWith("video/") || (!file.type && /\.(mp4|m4v|mov|webm|mkv|avi|ogv|mpeg|mpg)$/i.test(file.name));
-    const isImage = file.type.startsWith("image/");
+    const isVideo = isVideoFile(file);
+    const isImage = isImageFile(file);
     if (!isVideo && !isImage) {
       store.toast("Formato não suportado aqui. Use imagem ou vídeo.", "error");
       return;

@@ -4,6 +4,41 @@ Todas as mudanças importantes do Krevo ficam neste arquivo.
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 versionamento semântico.
 
+## [0.5.0] — 2026-10-24
+
+### Corrigido (vídeo de vez ao salvar, abrir e arrastar)
+
+- **Salvar/exportar com vídeo não trava mais**: o `.krevo` nunca mais converte o
+  arquivo de vídeo em base64 — um vídeo de 200 MB virava ~270 MB de texto em
+  JSON (três cópias em memória) e congelava o app ao salvar ou exportar PDF.
+  Agora o projeto guarda o **cartão do vídeo** (poster + nome + geometria) e a
+  interface oferece **“Reconectar arquivo”** ao reabrir, com um clique.
+- **Abrir projetos antigos com mídia embutida**: `data:` gigantes são convertidos
+  para `blob:` logo ao abrir — editar depois disso não serializa megabytes a
+  cada passo do histórico.
+- **Arrastar arquivo para a janela no app desktop funciona**: com
+  `dragDropEnabled` o Tauri intercepta o drop antes do webview; agora o evento
+  nativo é escutado e os arquivos entram pelo mesmo pipeline seguro (via asset
+  protocol, em streaming — sem IPC gigante). `.krevo`, imagens e vídeos.
+- **Reprodução com guarda anti-travamento**: se o vídeo não começar em 8 s
+  (codec ausente no sistema), o app avisa com orientação em vez de parecer
+  congelado.
+- **Poster do vídeo capturado durante a reprodução** (nunca na importação) —
+  miniaturas, PDF e cartões reabertos mostram o quadro real, de graça.
+- Arquivos soltos sem MIME (comum no Linux) são detectados pela extensão; excluir
+  mídia agora libera a memória do object URL correspondente.
+
+### Adicionado (templates de apresentação)
+
+- **Decks com vários slides**: templates agora podem nascer com páginas —
+  **Deck · Pitch Aurora** (capa, problema, solução, tração, roadmap e contato,
+  6 slides) e **Deck · Claro minimal** (proposta comercial em 5 slides).
+- **4 slides avulsos novos**: Citação, Métricas, Comparativo (antes/depois) e
+  Cronograma — todos em 1920×1080.
+- **Currículo minimal refeito**: o template estava com conteúdo de e-book
+  (erro de copy-paste); agora é um currículo A4 de verdade, com experiência,
+  formação, competências e idiomas.
+
 ## [0.4.0] — 2026-10-23
 
 ### Adicionado

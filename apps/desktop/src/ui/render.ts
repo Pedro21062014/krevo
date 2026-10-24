@@ -103,12 +103,46 @@ export function applyElement(
     case "image":
     case "video": {
       const src = el.src ?? "";
+      // Vídeo sem fonte (projeto salvo): mostra o poster congelado, se houver.
+      const posterKey = `poster:${el.poster ?? ""}`;
+      const showPosterCard = el.kind === "video" && !src && Boolean(el.poster);
+      if (showPosterCard) {
+        if (node.dataset.src !== posterKey || kindChanged) {
+          node.replaceChildren();
+          node.classList.remove("media-error", "playing");
+          const img = document.createElement("img");
+          img.src = el.poster as string;
+          img.alt = el.name || "Vídeo";
+          img.draggable = false;
+          node.appendChild(img);
+          const badge = document.createElement("small");
+          badge.className = "video-unlinked";
+          badge.textContent = "fonte não vinculada · troque o arquivo no inspetor";
+          node.appendChild(badge);
+          node.dataset.src = posterKey;
+          node.dataset.name = el.name || "Vídeo";
+        }
+        if (el.radius) node.style.overflow = "hidden";
+        break;
+      }
       if (!src) {
         node.classList.remove("playing", "media-error");
-        node.replaceChildren();
-        node.style.background =
-          "repeating-linear-gradient(45deg,#20232e,#20232e 10px,#272b38 10px,#272b38 20px)";
-        node.dataset.src = "";
+        if (node.dataset.src !== "") {
+          node.replaceChildren();
+          const card = document.createElement("div");
+          card.className = "video-placeholder";
+          const symbol = document.createElement("span");
+          symbol.textContent = "▶";
+          symbol.setAttribute("aria-hidden", "true");
+          const title = document.createElement("strong");
+          title.textContent = el.name || "Vídeo";
+          const hint = document.createElement("small");
+          hint.textContent = thumb ? "Vídeo" : "Prévia desativada · duplo clique para reproduzir";
+          card.append(symbol, title, hint);
+          node.appendChild(card);
+          node.dataset.src = "";
+          node.dataset.name = el.name || "Vídeo";
+        }
         break;
       }
       if (node.dataset.src !== src || kindChanged) {

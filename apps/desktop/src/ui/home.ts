@@ -16,6 +16,7 @@ import {
   gradient,
   iconDataUri,
   shapeEl,
+  templatePages,
   templateToPage,
   textEl,
   type Template,
@@ -23,7 +24,7 @@ import {
 import { appInfo, isDesktop, PROVIDERS, unsplashSearch, type AppInfo } from "../bridge";
 import { store } from "../store";
 import type { Photo, ProjectSummary } from "../types";
-import { esc, formatDate } from "../util";
+import { esc, formatDate, hydrateProjectMedia } from "../util";
 import { agentMode, testAiConnection } from "./agent";
 import { kMark, logoLockup } from "./brand";
 import { icons } from "./icons";
@@ -101,12 +102,14 @@ function skeletons(count: number): string {
 
 function templateCard(t: Template): string {
   const holder = document.createElement("div");
-  holder.appendChild(renderThumbFill(templateToPage(t), 480, 300));
+  // Decks mostram o primeiro slide como capa.
+  holder.appendChild(renderThumbFill(templatePages(t)[0], 480, 300));
+  const sub = t.pages ? `${t.pages().length} slides` : `${t.w}×${t.h}`;
   return `
     <button class="card" data-action="use-template" data-id="${t.id}">
       <div class="card-thumb">${holder.innerHTML}<span class="card-badge">${esc(t.category)}</span></div>
       <div class="card-body">
-        <div class="meta"><div class="card-title">${esc(t.name)}</div><div class="card-sub">${t.w}×${t.h}</div></div>
+        <div class="meta"><div class="card-title">${esc(t.name)}</div><div class="card-sub">${sub}</div></div>
       </div>
     </button>`;
 }
@@ -141,7 +144,7 @@ function inicioTab(): string {
   const recent = store.state.recent;
   return `
   <section class="hero">
-    <span class="eyebrow"><span class="dot"></span> Krevo 0.2 · estúdio de design com IA</span>
+    <span class="eyebrow"><span class="dot"></span> Krevo 0.5 · estúdio de design com IA</span>
     <h1>O que você quer criar agora?</h1>
     <p>PDF, apresentações, imagens, vídeo e mais — um editor nativo em Rust com um agente de IA ao lado. Descreva o design e ele monta no canvas.</p>
 
@@ -667,8 +670,14 @@ function onAction(event: Event, node: HTMLElement): void {
   }
   if (action === "open-recent") {
     const project = store.getRecentProject(id);
-    if (project) store.openProject(project);
-    else store.toast("Não encontrei esse projeto no armazenamento local.", "error");
+    if (project) {
+      store.openProject(project);
+      // Mídias gigantes embutidas (projetos de versões antigas) viram blob:
+      // sem isso, editar depois disso serializa megabytes a cada passo.
+      void hydrateProjectMedia(store.state.project);
+    } else {
+      store.toast("Não encontrei esse projeto no armazenamento local.", "error");
+    }
     return;
   }
   if (action === "delete-recent") {

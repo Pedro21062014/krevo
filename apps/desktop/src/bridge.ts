@@ -92,7 +92,7 @@ export async function appInfo(): Promise<AppInfo> {
     {},
     async () => ({
       name: "Krevo",
-      version: "0.4.0",
+      version: "0.5.0",
       platform: "web",
       arch: navigator.platform || "browser",
       engine: "krevo-core (modo navegador)",

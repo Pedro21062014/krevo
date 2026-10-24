@@ -1,5 +1,7 @@
 /** Utilidades pequenas e sem dependências. */
 
+import type { Project } from "./types";
+
 let counter = 0;
 
 export function uid(prefix = "el"): string {
@@ -102,17 +104,30 @@ export function releaseObjectUrl(src: string): void {
   }
 }
 
+/** Extensões aceitas como vídeo (alguns sistemas mandam MIME vazio). */
+const VIDEO_EXT = /\.(mp4|m4v|mov|webm|mkv|avi|ogv|mpeg|mpg|wmv|3gp)$/i;
+const IMAGE_EXT = /\.(png|jpe?g|gif|webp|svg|bmp|avif)$/i;
+
+/** Detecta arquivo de vídeo por MIME ou extensão. */
+export function isVideoFile(file: { type: string; name: string }): boolean {
+  return file.type.startsWith("video/") || (!file.type && VIDEO_EXT.test(file.name));
+}
+
+/** Detecta arquivo de imagem por MIME ou extensão. */
+export function isImageFile(file: { type: string; name: string }): boolean {
+  return file.type.startsWith("image/") || (!file.type && IMAGE_EXT.test(file.name));
+}
+
 /**
  * Prepara a mídia de um arquivo para o canvas.
  *
- * Vídeos e arquivos grandes usam `blob:` (instantâneo, sem base64 na memória).
- * Imagens pequenas continuam como data URL, que já vai pronta para o PDF.
+ * Tudo entra como `blob:` (instantâneo, sem base64 na memória).
  */
 export async function mediaSource(file: File): Promise<string> {
   // Tudo entra como object URL. Base64 no estado significaria copiar megabytes
   // a cada passo do histórico e a cada alteração — era isso que travava a
   // interface ao importar mídia. O data URL só nasce na hora de salvar/exportar.
-  const prepared = file.type.startsWith("image/") ? await shrinkImage(file, MAX_IMAGE_SIDE) : file;
+  const prepared = isImageFile(file) ? await shrinkImage(file, MAX_IMAGE_SIDE) : file;
   const url = URL.createObjectURL(prepared);
   objectUrls.set(url, prepared);
   return url;
@@ -159,21 +174,66 @@ export async function shrinkImage(file: File, maxDim = MAX_IMAGE_SIDE): Promise<
   }
 }
 
-/** Troca todos os `blob:` de um projeto por data URLs (usado ao salvar). */
+/**
+ * Troca os `blob:` de um projeto por data URLs (usado ao salvar/exportar).
+ *
+ * VÍDEO NUNCA vira base64: um arquivo de 200 MB viraria ~270 MB de texto em
+ * JSON (três cópias em memória: data URL + stringify + IPC) — era isso que
+ * congelava o app ao salvar depois de importar um vídeo. O `.krevo` guarda o
+ * cartão (poster + nome + geometria) e o arquivo é reconectado ao reabrir.
+ */
 export async function materializeMedia<T>(project: T): Promise<T> {
   const clone = JSON.parse(JSON.stringify(project)) as T & {
-    pages?: { elements?: { src?: string | null }[] }[];
+    pages?: { elements?: { kind?: string; src?: string | null }[] }[];
   };
   for (const page of clone.pages ?? []) {
     for (const el of page.elements ?? []) {
       const src = el.src;
       if (!isObjectUrl(src)) continue;
+      if (el.kind === "video") {
+        el.src = null;
+        continue;
+      }
       const file = fileForObjectUrl(src as string);
       if (!file) continue;
       el.src = await readFileAsDataUrl(file);
     }
   }
   return clone;
+}
+
+/** Acima disso, um data: embutido vira blob: ao abrir o projeto. */
+const INLINE_DATA_LIMIT = 1_500_000;
+
+async function dataUrlToObjectUrl(src: string): Promise<string | null> {
+  try {
+    const blob = await (await fetch(src)).blob();
+    const url = URL.createObjectURL(blob);
+    objectUrls.set(url, new File([blob], "midia", { type: blob.type }));
+    return url;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Depois de abrir um projeto (arquivo `.krevo` ou recente), troca mídias
+ * gigantes embutidas (`data:`) por object URLs. Sem isso, cada snapshot de
+ * histórico e cada repaint serializava megabytes — outra fonte de travamento
+ * ao editar projetos com vídeo importado em versões antigas.
+ */
+export async function hydrateProjectMedia(project: Project): Promise<void> {
+  const swaps: { el: { src?: string | null }; url: string }[] = [];
+  for (const page of project.pages) {
+    for (const el of page.elements) {
+      const src = el.src;
+      if (typeof src === "string" && src.startsWith("data:") && src.length > INLINE_DATA_LIMIT) {
+        const url = await dataUrlToObjectUrl(src);
+        if (url) swaps.push({ el, url });
+      }
+    }
+  }
+  for (const { el, url } of swaps) el.src = url;
 }
 
 /** Miniatura leve (para salvar o projeto recente sem estourar o localStorage). */

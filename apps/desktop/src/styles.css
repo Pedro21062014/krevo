@@ -2493,3 +2493,18 @@ html[data-theme="light"] .kf-page {
   text-overflow: ellipsis; white-space: nowrap; font-size: 16px;
 }
 .video-placeholder > small { color: #a4abb6; font-size: 12px; }
+
+/* Vídeo com fonte não vinculada (projeto reaberto): poster + selo. */
+.kf-el.video { position: relative; }
+.kf-el.video .video-unlinked {
+  position: absolute;
+  left: 10px; bottom: 10px;
+  max-width: calc(100% - 20px);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(10, 12, 16, 0.78);
+  color: #ffd9a8;
+  font-size: 12px;
+  pointer-events: none;
+}

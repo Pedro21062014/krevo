@@ -271,6 +271,8 @@ export interface Template {
   h: number;
   background: Fill;
   build: () => Element[];
+  /** Decks com vários slides: o projeto nasce com todas as páginas. */
+  pages?: () => Page[];
 }
 
 function page(w: number, h: number, background: Fill, elements: Element[]): Page {
@@ -279,6 +281,12 @@ function page(w: number, h: number, background: Fill, elements: Element[]): Page
 
 export function templateToPage(t: Template): Page {
   return page(t.w, t.h, t.background, t.build());
+}
+
+/** Todas as páginas do template (decks voltam com todos os slides). */
+export function templatePages(t: Template): Page[] {
+  if (t.pages) return t.pages();
+  return [templateToPage(t)];
 }
 
 const ink = "#0B1020";
@@ -340,6 +348,382 @@ export const TEMPLATES: Template[] = [
           textEl(1010, y + 32, 140, 40, time, { size: 22, color: "#8A8FAE", align: "right" }),
         ];
       }),
+    ],
+  },
+  {
+    id: "deck-aurora",
+    name: "Deck · Pitch Aurora",
+    category: "Apresentação",
+    w: 1920,
+    h: 1080,
+    background: gradient(140, "#0B1020", "#241B4D"),
+    pages: () => {
+      const bg = gradient(140, "#0B1020", "#241B4D");
+      const mint = "#00D4B8";
+      const lilac = "#6C5CE7";
+      const white = "#F7F7FB";
+      const soft = "#B9B7D6";
+      const faint = "#6E6A99";
+      const W = 1920;
+      const H = 1080;
+      const M = 160;
+      const mk = (name: string, elements: Element[]): Page => ({
+        id: uid("pg"),
+        name,
+        width: W,
+        height: H,
+        background: bg,
+        elements,
+      });
+      const header = (kicker: string, title: string) => [
+        shapeEl("rect", M, 120, 64, 6, mint, { radius: 3, name: "Detalhe" }),
+        textEl(M, 152, 900, 40, kicker.toUpperCase(), {
+          size: 22,
+          weight: 600,
+          color: faint,
+          letterSpacing: 6,
+        }),
+        textEl(M, 208, W - M * 2, 110, title, { size: 64, weight: 700, color: white }),
+      ];
+      const footer = (n: string) => [
+        textEl(M, H - 88, 500, 34, "AURORA · SÉRIE A · 2026", { size: 17, color: faint, letterSpacing: 2 }),
+        textEl(W - M - 200, H - 88, 200, 34, n, { size: 17, color: faint, align: "right" }),
+      ];
+      return [
+        mk("Capa", [
+          shapeEl("rect", M, 190, 80, 8, mint, { radius: 4, name: "Detalhe" }),
+          textEl(M, 240, 1000, 60, "AURORA · SÉRIE A", { size: 26, weight: 600, color: "#9E9BC7", letterSpacing: 6 }),
+          textEl(M, 340, 1200, 320, "O futuro do design\né conversacional.", {
+            size: 112,
+            weight: 700,
+            color: white,
+            lineHeight: 1.02,
+          }),
+          textEl(M, 730, 820, 110, "Krevo une canvas, IA e exportação profissional em um único app nativo.", {
+            size: 30,
+            color: soft,
+            lineHeight: 1.45,
+          }),
+          shapeEl("ellipse", 1420, 600, 380, 380, lilac, { opacity: 0.75, name: "Ornamento" }),
+          shapeEl("ellipse", 1580, 200, 210, 210, mint, { opacity: 0.5, name: "Ornamento 2" }),
+          textEl(M, 950, 500, 40, "apresentado por Ana Ribeiro", { size: 20, color: faint }),
+        ]),
+        mk("Problema", [
+          ...header("01 · contexto", "Ferramentas demais,\nfluxo de menos."),
+          textEl(M, 420, 880, 130, "Times criativos migram entre 4–6 apps para produzir uma peça: mockup, editor, PDF, vídeo, revisão.", {
+            size: 28,
+            color: soft,
+            lineHeight: 1.5,
+          }),
+          ...[
+            ["6", "apps no fluxo típico"],
+            ["14 h", "por semana em troca de contexto"],
+            ["3×", "mais revisões quando o formato muda"],
+          ].flatMap(([big, label], i) => {
+            const x = M + i * 560;
+            return [
+              shapeEl("rect", x, 620, 500, 220, "rgba(255,255,255,0.05)", { radius: 24, name: "Card", stroke: { color: "rgba(255,255,255,0.09)", width: 1 } }),
+              textEl(x + 40, 650, 420, 90, big, { size: 64, weight: 700, color: mint }),
+              textEl(x + 40, 750, 420, 60, label, { size: 21, color: soft, lineHeight: 1.3 }),
+            ];
+          }),
+          ...footer("02 / 06"),
+        ]),
+        mk("Solução", [
+          ...header("02 · proposta", "Um só estúdio, do rascunho ao arquivo."),
+          ...[
+            ["Canvas único", "PDF, deck, imagem e vídeo no mesmo lugar — sem exportar para reaproveitar."],
+            ["IA que desenha", "O agente posiciona elementos reais no canvas; você ajusta tudo à mão depois."],
+            ["Nativo e leve", "Motor em Rust: abre em menos de 1 s, ~8 MB, sem Chromium."],
+          ].flatMap(([title, body], i) => {
+            const x = M + i * 560;
+            return [
+              shapeEl("rect", x, 400, 500, 340, "rgba(255,255,255,0.05)", { radius: 24, name: "Pilar", stroke: { color: "rgba(255,255,255,0.09)", width: 1 } }),
+              shapeEl("ellipse", x + 40, 440, 56, 56, i === 1 ? mint : lilac, { opacity: 0.9 }),
+              textEl(x + 40, 530, 420, 50, title, { size: 28, weight: 700, color: white }),
+              textEl(x + 40, 590, 420, 120, body, { size: 20, color: soft, lineHeight: 1.5 }),
+            ];
+          }),
+          textEl(M, 820, W - M * 2, 70, "O resultado: menos troca de contexto, mais tempo em cima da ideia.", {
+            size: 26,
+            color: "#9E9BC7",
+          }),
+          ...footer("03 / 06"),
+        ]),
+        mk("Tração", [
+          ...header("03 · tração", "Crescimento composto, base sólida."),
+          ...[
+            ["12.400", "usuários ativos/mês"],
+            ["+38%", "crescimento mensal"],
+            ["4,8★", "nota média nas avaliações"],
+            ["R$ 96 mil", "MRR · junho"],
+          ].flatMap(([big, label], i) => {
+            const x = M + i * 420;
+            return [
+              textEl(x, 430, 380, 100, big, { size: 72, weight: 700, color: i % 2 ? lilac : mint }),
+              textEl(x, 550, 380, 60, label, { size: 21, color: soft, lineHeight: 1.3 }),
+              shapeEl("rect", x, 410, 60, 4, i % 2 ? lilac : mint, { radius: 2, name: "Trace" }),
+            ];
+          }),
+          shapeEl("rect", M, 700, W - M * 2, 200, "rgba(255,255,255,0.04)", { radius: 24, name: "Cota", stroke: { color: "rgba(255,255,255,0.08)", width: 1 } }),
+          textEl(M + 40, 740, W - M * 2 - 80, 120, "“Troquei três assinaturas pelo Krevo. O deck sai em metade do tempo — e o PDF final é vetorial de verdade.”", {
+            size: 26,
+            color: white,
+            lineHeight: 1.5,
+          }),
+          textEl(M + 40, 856, W - M * 2 - 80, 34, "Mariana L. · head de design, fintech série B", { size: 18, color: faint }),
+          ...footer("04 / 06"),
+        ]),
+        mk("Roadmap", [
+          ...header("04 · roadmap", "Próximos 12 meses."),
+          ...[
+            ["Q3", "Apresentação ao vivo", "modo apresentar com notas do orador"],
+            ["Q4", "Colaboração", "compartilhar link e editar em conjunto"],
+            ["Q1", "Plugins", "API de extensões para elementos próprios"],
+            ["Q2", "Vídeo timeline", "cortes e legendas sem sair do app"],
+          ].flatMap(([q, title, body], i) => {
+            const y = 420 + i * 130;
+            return [
+              shapeEl("ellipse", M + 8, y + 10, 26, 26, i < 2 ? mint : lilac, { name: "Nó" }),
+              i < 3 ? shapeEl("rect", M + 20, y + 40, 2, 96, "rgba(255,255,255,0.14)", { name: "Linha" }) : undefined,
+              textEl(M + 80, y, 220, 44, q, { size: 30, weight: 700, color: i < 2 ? mint : "#9E9BC7" }),
+              textEl(M + 320, y, 620, 44, title, { size: 26, weight: 600, color: white }),
+              textEl(M + 980, y, 620, 44, body, { size: 21, color: soft }),
+            ].filter(Boolean) as Element[];
+          }),
+          ...footer("05 / 06"),
+        ]),
+        mk("Contato", [
+          shapeEl("ellipse", 1380, 260, 440, 440, lilac, { opacity: 0.5, name: "Ornamento" }),
+          shapeEl("ellipse", 1620, 720, 240, 240, mint, { opacity: 0.4, name: "Ornamento 2" }),
+          textEl(M, 330, 1100, 260, "Vamos desenhar\njuntos?", { size: 120, weight: 700, color: white, lineHeight: 1.0 }),
+          textEl(M, 660, 800, 60, "ana@aurora.design · aurora.design/pitch", { size: 26, color: soft }),
+          shapeEl("rect", M, 760, 320, 96, mint, { radius: 48, name: "Botão" }),
+          textEl(M, 786, 320, 50, "Agendar demo", { size: 26, weight: 700, color: "#04121F", align: "center" }),
+          textEl(M, 950, 600, 40, "@auroradesign em todas as redes", { size: 19, color: faint }),
+        ]),
+      ];
+    },
+    build: () => [],
+  },
+  {
+    id: "deck-clean",
+    name: "Deck · Claro minimal",
+    category: "Apresentação",
+    w: 1920,
+    h: 1080,
+    background: "#F7F7FB",
+    pages: () => {
+      const bg = "#F7F7FB";
+      const coral = "#E4572E";
+      const teal = "#2A9D8F";
+      const dark = "#1A1714";
+      const muted = "#6B6F8A";
+      const line = "#E6E6F0";
+      const W = 1920;
+      const H = 1080;
+      const M = 160;
+      const mk = (name: string, elements: Element[]): Page => ({
+        id: uid("pg"),
+        name,
+        width: W,
+        height: H,
+        background: bg,
+        elements,
+      });
+      const chrome = (n: string, total: string) => [
+        textEl(M, 64, 600, 32, "ESTÚDIO NORTE", { size: 17, weight: 700, color: coral, letterSpacing: 4 }),
+        textEl(W - M - 200, 64, 200, 32, `${n} / ${total}`, { size: 17, color: "#A0A4B8", align: "right" }),
+        shapeEl("rect", M, 108, W - M * 2, 1, line, { name: "Fio" }),
+      ];
+      return [
+        mk("Capa", [
+          shapeEl("ellipse", 1200, -200, 800, 800, "#F4E3D7", { name: "Halo" }),
+          shapeEl("ellipse", 1560, 420, 260, 260, coral, { opacity: 0.85, name: "Sol" }),
+          textEl(M, 300, 900, 46, "PROPOSTA COMERCIAL", { size: 22, weight: 700, color: coral, letterSpacing: 6 }),
+          textEl(M, 380, 1000, 300, "Marca Norte\npara o digital.", { size: 104, weight: 700, color: dark, lineHeight: 1.02 }),
+          textEl(M, 720, 760, 100, "Redesign de identidade, sistema de social media e manual de marca — proposta nº 2026-14.", {
+            size: 27,
+            color: muted,
+            lineHeight: 1.5,
+          }),
+          textEl(M, 960, 600, 40, "março de 2026 · confidencial", { size: 18, color: "#A0A4B8" }),
+        ]),
+        mk("Agenda", [
+          ...chrome("02", "05"),
+          textEl(M, 180, 700, 90, "Agenda", { size: 56, weight: 700, color: dark }),
+          ...[
+            ["01", "Diagnóstico", "o que ouvimos e o que os dados mostram"],
+            ["02", "Proposta", "escopo, entregas e cronograma"],
+            ["03", "Investimento", "fases, valores e condições"],
+            ["04", "Próximos passos", "como começamos nesta semana"],
+          ].flatMap(([num, title, body], i) => {
+            const y = 330 + i * 150;
+            return [
+              textEl(M, y, 110, 60, num, { size: 40, weight: 700, color: coral }),
+              textEl(M + 130, y + 2, 500, 50, title, { size: 32, weight: 600, color: dark }),
+              textEl(M + 700, y + 12, 900, 44, body, { size: 23, color: muted }),
+              i < 3 ? shapeEl("rect", M, y + 100, W - M * 2, 1, line, { name: "Divisor" }) : undefined,
+            ].filter(Boolean) as Element[];
+          }),
+        ]),
+        mk("Proposta", [
+          ...chrome("03", "05"),
+          textEl(M, 180, 900, 90, "O que entregamos", { size: 56, weight: 700, color: dark }),
+          ...[
+            ["Identidade", "logo, tipografia, paleta e aplicações essenciais — pronto para produção."],
+            ["Social kit", "40 templates editáveis de post e story com o sistema da marca."],
+            ["Manual vivo", "guia digital de uso, com exemplos do dia a dia e regras claras."],
+          ].flatMap(([title, body], i) => {
+            const x = M + i * 560;
+            return [
+              shapeEl("rect", x, 360, 500, 380, "#FFFFFF", { radius: 24, name: "Card", shadow: true, stroke: { color: line, width: 1 } }),
+              shapeEl("rect", x + 40, 400, 48, 6, teal, { radius: 3 }),
+              textEl(x + 40, 430, 420, 50, title, { size: 30, weight: 700, color: dark }),
+              textEl(x + 40, 496, 420, 200, body, { size: 21, color: muted, lineHeight: 1.55 }),
+            ];
+          }),
+          textEl(M, 830, W - M * 2, 50, "Prazo total: 8 semanas · revisões incluídas em cada fase.", {
+            size: 23,
+            color: muted,
+          }),
+        ]),
+        mk("Citação", [
+          shapeEl("rect", 0, 0, 14, H, teal, { name: "Barra" }),
+          textEl(M, 330, 240, 160, "“", { size: 200, weight: 700, color: "#DCEBE8" }),
+          textEl(320, 380, 1280, 240, "Design não é o que você vê.\nÉ o que a marca faz as pessoas sentirem.", {
+            size: 56,
+            weight: 300,
+            color: dark,
+            lineHeight: 1.3,
+          }),
+          shapeEl("rect", 320, 700, 64, 4, coral, { radius: 2 }),
+          textEl(320, 730, 700, 40, "Equipe Norte · workshop de posicionamento", { size: 21, color: muted }),
+        ]),
+        mk("Contato", [
+          shapeEl("ellipse", -180, 700, 520, 520, "#F4E3D7", { name: "Halo" }),
+          textEl(M, 330, 1200, 260, "Vamos começar?", { size: 110, weight: 700, color: dark }),
+          textEl(M, 520, 900, 60, "Responda este e-mail ou chame no WhatsApp — respondemos em até 1 dia útil.", {
+            size: 26,
+            color: muted,
+            lineHeight: 1.5,
+          }),
+          shapeEl("rect", M, 640, 340, 96, dark, { radius: 48, name: "Botão" }),
+          textEl(M, 666, 340, 50, "Aprovar proposta", { size: 25, weight: 700, color: "#FFFFFF", align: "center" }),
+          textEl(M, 820, 700, 40, "ola@estudionorte.com · @estudionorte", { size: 20, color: "#A0A4B8" }),
+          textEl(M, 960, 600, 34, "proposta válida por 30 dias", { size: 16, color: "#C6C9D8" }),
+        ]),
+      ];
+    },
+    build: () => [],
+  },
+  {
+    id: "slide-citacao",
+    name: "Slide · Citação",
+    category: "Apresentação",
+    w: 1920,
+    h: 1080,
+    background: gradient(160, "#0B1020", "#3A1414"),
+    build: () => [
+      shapeEl("ellipse", 1440, 640, 380, 380, "#FF6B35", { opacity: 0.25, name: "Brilho" }),
+      textEl(240, 200, 300, 220, "“", { size: 300, weight: 700, color: "rgba(255,255,255,0.14)" }),
+      textEl(320, 360, 1280, 280, "Feito à mão termina mais rápido\nquando a máquina ajuda\na começar.", {
+        size: 64,
+        weight: 300,
+        color: "#FFF3EC",
+        lineHeight: 1.35,
+      }),
+      shapeEl("rect", 320, 740, 72, 5, "#FF6B35", { radius: 3 }),
+      textEl(320, 780, 900, 44, "time de produto · retro do trimestre", { size: 24, color: "#D8B4A6" }),
+    ],
+  },
+  {
+    id: "slide-metricas",
+    name: "Slide · Métricas",
+    category: "Apresentação",
+    w: 1920,
+    h: 1080,
+    background: "#0B1020",
+    build: () => [
+      shapeEl("rect", 160, 130, 64, 6, "#00D4B8", { radius: 3, name: "Detalhe" }),
+      textEl(160, 166, 1200, 90, "Como estamos indo", { size: 64, weight: 700, color: "#F7F7FB" }),
+      textEl(160, 268, 1300, 50, "Quatro números que resumem o trimestre.", { size: 26, color: "#9E9BC7" }),
+      ...[
+        ["R$ 96 mil", "MRR · +18% vs. último mês", "#00D4B8"],
+        ["1.204", "novos usuários na semana", "#6C5CE7"],
+        ["97,2%", "retenção de clientes ativos", "#F6C177"],
+        ["6,4%", "churn anual consolidado", "#FF5D8F"],
+      ].flatMap(([big, label, color], i) => {
+        const x = 160 + (i % 2) * 820;
+        const y = 400 + Math.floor(i / 2) * 300;
+        return [
+          shapeEl("rect", x, y, 780, 240, "rgba(255,255,255,0.045)", { radius: 24, name: "Card", stroke: { color: "rgba(255,255,255,0.08)", width: 1 } }),
+          shapeEl("rect", x, y, 8, 240, color as string, { name: "Acento" }),
+          textEl(x + 48, y + 40, 700, 90, big, { size: 68, weight: 700, color: "#F7F7FB" }),
+          textEl(x + 48, y + 150, 700, 50, label, { size: 22, color: "#B9B7D6" }),
+        ];
+      }),
+      textEl(160, 1000, 600, 34, "fonte: painel interno · junho/2026", { size: 17, color: "#6E6A99" }),
+    ],
+  },
+  {
+    id: "slide-comparativo",
+    name: "Slide · Comparativo",
+    category: "Apresentação",
+    w: 1920,
+    h: 1080,
+    background: "#F7F7FB",
+    build: () => [
+      textEl(160, 120, 1400, 90, "Antes e depois da troca", { size: 60, weight: 700, color: "#0B1020" }),
+      textEl(160, 218, 1300, 46, "O mesmo processo, em dois momentos.", { size: 24, color: "#6B6F8A" }),
+      shapeEl("rect", 160, 320, 780, 560, "#FFFFFF", { radius: 24, name: "Antes", shadow: true, stroke: { color: "#E6E6F0", width: 1 } }),
+      shapeEl("rect", 980, 320, 780, 560, "#0B1020", { radius: 24, name: "Depois" }),
+      textEl(220, 360, 400, 44, "ANTES", { size: 20, weight: 700, color: "#A0A4B8", letterSpacing: 4 }),
+      textEl(1040, 360, 400, 44, "COM O KREVO", { size: 20, weight: 700, color: "#00D4B8", letterSpacing: 4 }),
+      ...[
+        ["6 ferramentas", "1 estúdio só"],
+        ["14 h/semana", "5 h/semana"],
+        ["PDF rasterizado", "PDF vetorial"],
+        ["Revisão por e-mail", "Revisão no canvas"],
+        ["R$ 320/mês", "R$ 39/mês"],
+      ].flatMap(([before, after], i) => {
+        const y = 440 + i * 84;
+        return [
+          textEl(220, y, 660, 40, before, { size: 26, color: "#6B6F8A" }),
+          textEl(1040, y, 660, 40, after, { size: 26, weight: 600, color: "#F7F7FB" }),
+          i < 4 ? shapeEl("rect", 220, y + 56, 660, 1, "#EFEFF5", { name: "Linha" }) : undefined,
+        ].filter(Boolean) as Element[];
+      }),
+    ],
+  },
+  {
+    id: "slide-cronograma",
+    name: "Slide · Cronograma",
+    category: "Apresentação",
+    w: 1920,
+    h: 1080,
+    background: gradient(120, "#06231F", "#0E3B33"),
+    build: () => [
+      shapeEl("rect", 160, 130, 64, 6, "#3ED598", { radius: 3, name: "Detalhe" }),
+      textEl(160, 166, 1400, 90, "Lançamento em 4 fases", { size: 64, weight: 700, color: "#ECFFF8" }),
+      textEl(160, 268, 1300, 50, "Cada fase entrega algo utilizável — sem big bang.", { size: 26, color: "#9FD8C8" }),
+      shapeEl("rect", 200, 560, 1520, 3, "rgba(255,255,255,0.18)", { name: "Trilho" }),
+      ...[
+        ["Semana 1–2", "Descoberta", "entrevistas e auditoria", "#3ED598"],
+        ["Semana 3–5", "Fundação", "identidade e sistema", "#3ED598"],
+        ["Semana 6–8", "Produção", "templates e conteúdo", "#F2C14E"],
+        ["Semana 9–10", "Lançamento", "treinamento e acompanhamento", "#F2C14E"],
+      ].flatMap(([when, title, body, color], i) => {
+        const x = 200 + i * 400;
+        return [
+          shapeEl("ellipse", x - 8, 552, 20, 20, color as string, { name: "Nó" }),
+          textEl(x - 8, 470, 340, 40, when, { size: 20, weight: 600, color: "#9FD8C8" }),
+          shapeEl("rect", x - 8, 620, 340, 170, "rgba(255,255,255,0.05)", { radius: 18, name: "Card", stroke: { color: "rgba(255,255,255,0.1)", width: 1 } }),
+          textEl(x + 24, 650, 280, 44, title, { size: 27, weight: 700, color: "#ECFFF8" }),
+          textEl(x + 24, 706, 280, 70, body, { size: 19, color: "#9FD8C8", lineHeight: 1.4 }),
+        ];
+      }),
+      textEl(160, 1000, 700, 34, "marcos em verde = entregas já contratadas", { size: 17, color: "#5E9384" }),
     ],
   },
   {
@@ -452,22 +836,65 @@ export const TEMPLATES: Template[] = [
     h: 1123,
     background: "#FAF7F2",
     build: () => [
-      shapeEl("ellipse", 880, -140, 460, 460, "#7BD389", { opacity: 0.35, name: "Halo" }),
-      textEl(72, 150, 700, 70, "E-BOOK GRATUITO", {
-        size: 22,
-        weight: 700,
-        color: "#7BD389",
-        letterSpacing: 5,
+      shapeEl("rect", 64, 92, 5, 128, "#1A1714", { name: "Fio lateral" }),
+      textEl(86, 92, 520, 60, "Ana Ribeiro", { size: 46, weight: 700, color: "#1A1714" }),
+      textEl(86, 156, 520, 36, "Direção de arte · design digital", { size: 19, color: "#6B6259" }),
+      textEl(86, 196, 640, 28, "ana.ribeiro@email.com · (11) 99999-0000 · São Paulo, BR · behance.net/anaribeiro", {
+        size: 12,
+        color: "#8A8377",
       }),
-      textEl(72, 230, 760, 200, "Design com IA\nsem perder a mão.", {
-        size: 76,
-        weight: 800,
-        color: "#EAF6FF",
-        lineHeight: 1,
+      textEl(64, 272, 300, 28, "EXPERIÊNCIA", { size: 13, weight: 700, color: "#C08B5C", letterSpacing: 3 }),
+      ...(
+        [
+          [
+            "Estúdio Prisma",
+            "Diretora de arte sênior",
+            "2022 — hoje",
+            "Lidero identidades visuais de marcas de consumo; 3 projetos premiados no ano passado.",
+          ],
+          [
+            "Agenda Norte",
+            "Designer pleno",
+            "2019 — 2022",
+            "Campanhas integradas e design system editorial para 12 clientes recorrentes.",
+          ],
+          [
+            "Freelance",
+            "Designer digital",
+            "2017 — 2019",
+            "Sites, social media e embalagem para pequenos negócios e startups.",
+          ],
+        ] as const
+      ).flatMap(([company, role, period, summary], i) => {
+        const y = 312 + i * 108;
+        return [
+          textEl(64, y, 380, 30, role, { size: 18, weight: 700, color: "#1A1714" }),
+          textEl(64, y + 32, 380, 26, company, { size: 14, color: "#6B6259" }),
+          textEl(500, y + 2, 230, 26, period, { size: 13, color: "#A09785", align: "right" }),
+          textEl(64, y + 62, 666, 40, summary, { size: 12.5, color: "#4A443B", lineHeight: 1.45 }),
+        ];
       }),
-      textEl(72, 470, 620, 60, "32 páginas · download imediato", { size: 24, color: "#9EC5DE" }),
-      shapeEl("rect", 860, 430, 268, 96, "#EAF6FF", { radius: 48, name: "Botão" }),
-      textEl(860, 458, 268, 44, "Baixar", { size: 30, weight: 700, color: "#0B2C46", align: "center" }),
+      textEl(64, 648, 300, 28, "FORMAÇÃO", { size: 13, weight: 700, color: "#C08B5C", letterSpacing: 3 }),
+      textEl(64, 686, 500, 28, "Bacharelado em Design Gráfico", { size: 17, weight: 700, color: "#1A1714" }),
+      textEl(64, 716, 500, 26, "FAAP · 2013 — 2017", { size: 13, color: "#6B6259" }),
+      textEl(64, 772, 300, 28, "COMPETÊNCIAS", { size: 13, weight: 700, color: "#C08B5C", letterSpacing: 3 }),
+      ...["Direção de arte", "Identidade visual", "Design system", "Figma", "Motion básico", "Fotografia"].flatMap(
+        (skill, i) => {
+          const x = 64 + (i % 3) * 226;
+          const y = 810 + Math.floor(i / 3) * 54;
+          return [
+            shapeEl("rect", x, y, 210, 40, "#F1EAD9", { radius: 20, name: skill }),
+            textEl(x, y + 10, 210, 24, skill, { size: 13, color: "#1A1714", align: "center" }),
+          ];
+        },
+      ),
+      textEl(64, 946, 300, 28, "IDIOMAS", { size: 13, weight: 700, color: "#C08B5C", letterSpacing: 3 }),
+      textEl(64, 982, 666, 26, "Português (nativo) · Inglês (fluente) · Espanhol (intermediário)", {
+        size: 13,
+        color: "#4A443B",
+      }),
+      shapeEl("rect", 64, 1058, 666, 1, "#E2D9C6", { name: "Rodapé" }),
+      textEl(64, 1072, 666, 24, "currículo atualizado em 2026", { size: 10, color: "#A09785" }),
     ],
   },
   {

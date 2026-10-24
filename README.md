@@ -321,9 +321,11 @@ gerado proceduralmente (funciona offline e imprime nítido).
 Post 1080×1080 · Story 1080×1920 · Retrato 1080×1350 · Banner 1200×628 ·
 Vídeo Full HD · Capa 1600×900.
 
-**Templates:** Pitch Aurora · Slide Agenda · Post Lançamento · Story Promoção ·
-Relatório A4 · Currículo minimal · Banner LinkedIn · Certificado · Card de preço ·
-Em branco.
+**Templates (15):** Deck · Pitch Aurora (6 slides) · Deck · Claro minimal (5 slides) ·
+Slide Citação · Slide Métricas · Slide Comparativo · Slide Cronograma · Pitch Aurora ·
+Slide Agenda · Post Lançamento · Story Promoção · Relatório A4 · Currículo minimal ·
+Certificado · Card de preço · Em branco. Decks nascem com **todos os slides**;
+os avulsos servem para montar o seu próprio deck.
 
 ---
 
@@ -394,7 +396,10 @@ Para editar: mexa em `site/index.template.html` e regenere com
 - Fontes no PDF usam as quatro Helvetica base-14 (peso/itálico mapeados);
   fontes personalizadas exigiriam embutir o arquivo `.ttf`.
 - Gradientes são aproximados por bandas na exportação.
-- Vídeo entra no PDF como primeiro quadro estático.
+- Vídeo entra no PDF como primeiro quadro estático (poster).
+- O arquivo `.krevo` **não embute o vídeo** (ficaria gigante e travava o
+  salvamento): o projeto guarda o cartão com o poster e o botão
+  **“Reconectar arquivo”** religa o vídeo em um clique ao reabrir.
 - PDF importado vira imagem editável por página (não há reflow de texto).
 - Builds não assinados (sem certificado Apple/Microsoft).
 

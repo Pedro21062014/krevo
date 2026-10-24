@@ -17,8 +17,8 @@ import type {
   Settings,
   Tool,
 } from "./types";
-import { FORMATS, baseElement, placeholderImage, templateToPage, type Template } from "./assets";
-import { uid } from "./util";
+import { FORMATS, baseElement, placeholderImage, templatePages, type Template } from "./assets";
+import { isObjectUrl, releaseObjectUrl, uid } from "./util";
 
 const STORAGE_KEY = "krevo.v1";
 const MAX_HISTORY = 80;
@@ -278,7 +278,8 @@ class Store {
   createProject(name: string, w: number, h: number, template?: Template, withMedia = true): void {
     const project = newProject(name, w, h, template ? false : withMedia);
     if (template) {
-      project.pages = [templateToPage(template)];
+      // Decks vêm com todos os slides; templates simples com uma página.
+      project.pages = templatePages(template);
       project.name = template.name;
     }
     this.openProject(project);
@@ -438,7 +439,12 @@ class Store {
     if (!this.state.selection.length) return;
     this.pushHistory();
     const ids = new Set(this.state.selection);
+    const removed = this.page.elements.filter((el) => ids.has(el.id) && !el.locked);
     this.page.elements = this.page.elements.filter((el) => !ids.has(el.id) || el.locked);
+    // Libera a memória das mídias importadas que saíram do canvas.
+    for (const el of removed) {
+      if (isObjectUrl(el.src)) releaseObjectUrl(el.src as string);
+    }
     this.state.selection = [];
     this.touch();
     this.emit();
