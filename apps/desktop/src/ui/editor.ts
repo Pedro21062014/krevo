@@ -18,7 +18,7 @@ import {
 import { exportPdf, isDesktop, saveProjectFile } from "../bridge";
 import { store } from "../store";
 import type { Element, Page, TextAlign } from "../types";
-import { clamp, esc, materializeMedia, mediaSource, toCss } from "../util";
+import { captureVideoPoster, clamp, esc, materializeMedia, mediaSource, toCss } from "../util";
 import { agentPanelHtml, bindAgentPanel } from "./agent";
 import { icons } from "./icons";
 import { downloadPagePng, pageThumbnail } from "./export-image";
@@ -166,6 +166,7 @@ export class EditorView {
   destroy(): void {
     this.unsubscribe?.();
     this.unsubscribe = null;
+    this.pauseVideos();
     window.clearTimeout(this.thumbTimer);
     window.removeEventListener("resize", this.onResize);
     this.cleanupKeys();
@@ -375,7 +376,14 @@ export class EditorView {
       const node = target.closest<HTMLElement>(".kf-el");
       if (!node) return;
       const el = store.page.elements.find((e) => e.id === node.dataset.id);
-      if (!el || el.kind !== "text" || el.locked) return;
+      if (!el || el.locked) return;
+      if (el.kind === "video") {
+        event.preventDefault();
+        event.stopPropagation();
+        this.toggleVideo(node);
+        return;
+      }
+      if (el.kind !== "text") return;
       event.preventDefault();
       event.stopPropagation();
       this.startTextEdit(node, el);
@@ -441,6 +449,7 @@ export class EditorView {
   private async onToolbar(action: string): Promise<void> {
     switch (action) {
       case "home":
+        this.pauseVideos();
         await this.refreshThumb();
         store.persistRecent();
         store.patch({ screen: "home", loadingHome: false });
@@ -1415,6 +1424,11 @@ export class EditorView {
           </div>
         </div>
         <div class="row wrap">
+          ${
+            el.kind === "video"
+              ? `<button class="btn small" data-inspector="toggle-video">▶ Reproduzir</button>`
+              : ""
+          }
           <button class="btn small" data-inspector="replace-media">${icons.image} Trocar arquivo</button>
           <button class="btn small ghost" data-inspector="flip-h" title="Espelhar na horizontal">⇄ Virar</button>
           <button class="btn small ghost" data-inspector="flip-v" title="Espelhar na vertical">⇅ Virar</button>
@@ -1716,6 +1730,11 @@ export class EditorView {
       case "record-screen":
         this.recordScreen();
         break;
+      case "toggle-video": {
+        const live = this.stageInner?.querySelector<HTMLElement>(`.kf-el.video[data-id="${el?.id}"]`);
+        if (live) this.toggleVideo(live);
+        break;
+      }
       case "flip-h":
         if (el) store.updateElement(el.id, { flipH: !el.flipH });
         break;
@@ -1726,11 +1745,48 @@ export class EditorView {
         this.pickFile(el?.kind === "video" ? "video/*" : "image/*", el?.id);
         break;
       case "clear-media":
-        if (el) store.updateElement(el.id, { src: null });
+        if (el) store.updateElement(el.id, { src: null, poster: null });
         break;
       default:
         break;
     }
+  }
+
+  /** Reproduz/pausa um vídeo do canvas (um por vez, para não travar). */
+  private toggleVideo(node: HTMLElement): void {
+    const video = node.querySelector<HTMLVideoElement>("video");
+    if (!video) {
+      store.toast("Este vídeo não pôde ser aberto pelo sistema.", "error");
+      return;
+    }
+    if (!video.paused) {
+      video.pause();
+      this.syncVideoButtons();
+      return;
+    }
+    this.pauseVideos(node);
+    video.loop = true;
+    video.play().then(
+      () => this.syncVideoButtons(),
+      () => store.toast("O sistema não conseguiu reproduzir este vídeo.", "error"),
+    );
+  }
+
+  /** Pausa todos os vídeos do canvas (menos o informado). */
+  private pauseVideos(except?: HTMLElement): void {
+    this.stageInner?.querySelectorAll<HTMLElement>(".kf-el.video").forEach((node) => {
+      if (node === except) return;
+      node.querySelector<HTMLVideoElement>("video")?.pause();
+      node.classList.remove("playing");
+    });
+  }
+
+  private syncVideoButtons(): void {
+    const host = this.root.querySelector("#inspector-host");
+    const playing = Boolean(this.stageInner?.querySelector(".kf-el.video.playing"));
+    host?.querySelectorAll<HTMLElement>("[data-inspector='toggle-video']").forEach((btn) => {
+      btn.textContent = playing ? "⏸ Pausar" : "▶ Reproduzir";
+    });
   }
 
   /** Abre o estúdio de gravação (tela, janela, aba ou câmera). */
@@ -1754,6 +1810,7 @@ export class EditorView {
     const h = w * ratio;
     const el = baseElement("video", (page.width - w) / 2, Math.max(16, (page.height - h) / 2), w, h);
     el.src = src;
+    el.poster = await captureVideoPoster(src);
     el.fit = "cover";
     el.name = video.file.name;
     store.addElement(el);
@@ -1796,10 +1853,12 @@ export class EditorView {
     const page = store.page;
     let width = 0;
     let height = 0;
+    let poster: string | null = null;
     if (isVideo) {
       const probe = document.createElement("video");
       probe.preload = "metadata";
       probe.muted = true;
+      probe.playsInline = true;
       probe.src = src;
       width = await new Promise<number>((resolve) => {
         const done = (): void => resolve(probe.videoWidth);
@@ -1808,6 +1867,14 @@ export class EditorView {
         window.setTimeout(() => resolve(probe.videoWidth), 2500);
       });
       height = probe.videoHeight;
+      probe.removeAttribute("src");
+      probe.load();
+      if (!width) {
+        store.toast("Não consegui ler a prévia deste vídeo. O arquivo será inserido sem prévia; o codec pode não ser compatível com o sistema.", "error");
+      } else {
+        // Quadro congelado: o canvas mostra a imagem em vez de decodificar vídeo.
+        poster = await captureVideoPoster(src);
+      }
     } else {
       const img = new Image();
       img.src = src;
@@ -1824,7 +1891,7 @@ export class EditorView {
     }
 
     if (replaceId) {
-      store.updateElement(replaceId, { src, name: file.name });
+      store.updateElement(replaceId, { src, name: file.name, poster });
       store.toast("Mídia trocada.", "success");
       return;
     }
@@ -1841,8 +1908,14 @@ export class EditorView {
     node.src = src;
     node.fit = "cover";
     node.name = file.name;
+    if (isVideo) node.poster = poster;
     store.addElement(node);
-    store.toast(isVideo ? "Vídeo inserido." : "Imagem inserida.", "success");
+    store.toast(
+      isVideo
+        ? "Vídeo inserido (quadro parado). Duplo clique ou ▶ no inspetor para reproduzir."
+        : "Imagem inserida.",
+      "success",
+    );
   }
 
   private onInspectorChange(event: Event): void {

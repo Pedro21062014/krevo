@@ -154,8 +154,9 @@ export async function renderPageCanvas(page: Page, scale = 2): Promise<HTMLCanva
       fillToCss(el.fill ?? el.stroke?.color ?? "#000000", ctx, el.w, el.h);
       const thickness = el.stroke?.width ?? 2;
       ctx.fillRect(el.x, el.y, el.w, Math.max(1, thickness));
-    } else if (el.kind === "image" || el.kind === "icon") {
-      const img = el.src ? await loadImage(el.src) : null;
+    } else if (el.kind === "image" || el.kind === "icon" || el.kind === "video") {
+      const src = el.kind === "video" ? el.poster : el.src;
+      const img = src ? await loadImage(src) : null;
       if (img) {
         const fit = el.kind === "icon" ? "contain" : (el.fit ?? "cover");
         const ratio = img.width / img.height;

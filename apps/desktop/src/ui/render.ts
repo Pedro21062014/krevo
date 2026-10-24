@@ -68,10 +68,17 @@ export function textCss(el: Element): string {
  * O canvas repinta a cada movimento do mouse; recriar o nó faria as imagens
  * recarregarem (era o que fazia os elementos "sumirem" durante o arraste).
  */
-export function applyElement(node: HTMLElement, el: Element, interactive = false): void {
+export function applyElement(
+  node: HTMLElement,
+  el: Element,
+  interactive = false,
+  thumb = false,
+): void {
   const kindChanged = node.dataset.kind !== el.kind;
   if (kindChanged) node.replaceChildren();
-  node.className = `kf-el ${el.kind}`;
+  node.classList.add("kf-el");
+  if (node.dataset.kind && kindChanged) node.classList.remove(node.dataset.kind);
+  node.classList.add(el.kind);
   node.dataset.id = el.id;
   node.dataset.kind = el.kind;
   node.style.cssText = elementCss(el);
@@ -97,6 +104,7 @@ export function applyElement(node: HTMLElement, el: Element, interactive = false
     case "video": {
       const src = el.src ?? "";
       if (!src) {
+        node.classList.remove("playing", "media-error");
         node.replaceChildren();
         node.style.background =
           "repeating-linear-gradient(45deg,#20232e,#20232e 10px,#272b38 10px,#272b38 20px)";
@@ -105,16 +113,40 @@ export function applyElement(node: HTMLElement, el: Element, interactive = false
       }
       if (node.dataset.src !== src || kindChanged) {
         node.replaceChildren();
-        if (el.kind === "video") {
+        node.classList.remove("media-error", "playing");
+        if (el.kind === "video" && thumb) {
+          // Miniaturas (páginas, faixa e início) mostram o quadro congelado:
+          // colocar <video> ali criava um decodificador por miniatura e era
+          // isso que travava o app no AppImage.
+          if (el.poster) {
+            const img = document.createElement("img");
+            img.src = el.poster;
+            img.alt = el.name || "Vídeo";
+            img.draggable = false;
+            node.appendChild(img);
+          }
+        } else if (el.kind === "video") {
           const video = document.createElement("video");
           video.src = src;
           video.muted = true;
-          video.loop = true;
+          video.loop = false;
+          video.autoplay = false;
           video.playsInline = true;
-          video.autoplay = true;
-          video.preload = "metadata";
+          video.preload = "none";
+          video.setAttribute("playsinline", "");
+          if (el.poster) video.setAttribute("poster", el.poster);
           node.dataset.name = el.name || "vídeo";
           video.addEventListener("error", () => node.classList.add("media-error"));
+          // Um vídeo tocando por vez: dois decodificadores simultâneos já
+          // deixam a interface aos soluços em máquinas sem aceleração.
+          video.addEventListener("play", () => {
+            document.querySelectorAll<HTMLVideoElement>(".kf-el.video video").forEach((other) => {
+              if (other !== video) other.pause();
+            });
+            node.classList.add("playing");
+          });
+          video.addEventListener("pause", () => node.classList.remove("playing"));
+          video.addEventListener("ended", () => node.classList.remove("playing"));
           node.appendChild(video);
         } else {
           const img = document.createElement("img");
@@ -128,6 +160,8 @@ export function applyElement(node: HTMLElement, el: Element, interactive = false
       node.querySelectorAll<HTMLElement>("img, video").forEach((media) => {
         media.style.objectFit = el.fit ?? "cover";
       });
+      // Mídia estática (miniaturas) não precisa de filtro/overflow caro.
+      if (thumb && el.kind === "video") node.style.filter = "none";
       if (el.radius) node.style.overflow = "hidden";
       break;
     }
@@ -162,9 +196,9 @@ export function applyElement(node: HTMLElement, el: Element, interactive = false
 }
 
 /** Cria o nó DOM de um elemento (usado no canvas e nas miniaturas). */
-export function renderElement(el: Element, interactive = false): HTMLElement {
+export function renderElement(el: Element, interactive = false, thumb = false): HTMLElement {
   const node = document.createElement("div");
-  applyElement(node, el, interactive);
+  applyElement(node, el, interactive, thumb);
   return node;
 }
 
@@ -177,7 +211,7 @@ export function renderThumb(page: Page, width: number): HTMLElement {
   inner.style.cssText = `position:absolute;left:0;top:0;width:${page.width}px;height:${page.height}px;transform:scale(${scale});transform-origin:top left;background:${page.background ? toCss(page.background as never) : "#fff"}`;
   for (const el of page.elements) {
     if (el.hidden) continue;
-    inner.appendChild(renderElement(el));
+    inner.appendChild(renderElement(el, false, true));
   }
   wrap.appendChild(inner);
   return wrap;
@@ -194,7 +228,7 @@ export function renderThumbFill(page: Page, width: number, height: number): HTML
   inner.style.cssText = `position:absolute;left:${offsetX}px;top:${offsetY}px;width:${page.width}px;height:${page.height}px;transform:scale(${scale});transform-origin:top left;background:${page.background ? toCss(page.background as never) : "#fff"}`;
   for (const el of page.elements) {
     if (el.hidden) continue;
-    inner.appendChild(renderElement(el));
+    inner.appendChild(renderElement(el, false, true));
   }
   wrap.appendChild(inner);
   return wrap;

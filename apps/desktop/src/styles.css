@@ -2457,3 +2457,22 @@ html[data-theme="light"] .kf-page {
   .mk-kinds { flex-direction: row; overflow-x: auto; border-right: none; border-bottom: 1px solid var(--line); }
   .mk-grid { grid-template-columns: 1fr; }
 }
+
+
+/* ==========================================================================
+   Vídeo no canvas
+   Enquanto o vídeo toca, tiramos filtro/sombra: no WebKitGTK (AppImage) o
+   filtro é aplicado em software a cada quadro e congela a interface.
+   ========================================================================== */
+
+.kf-el.video.playing {
+  filter: none !important;
+  box-shadow: none !important;
+}
+
+.kf-el.video video {
+  width: 100%;
+  height: 100%;
+  display: block;
+  background: #0b0d10;
+}

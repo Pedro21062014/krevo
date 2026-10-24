@@ -83,6 +83,8 @@ export interface Element {
   shadow?: Shadow | null;
   text?: TextProps | null;
   src?: string | null;
+  /** Quadro congelado do vídeo (data URL) — evita decodificar no canvas. */
+  poster?: string | null;
   fit?: ImageFit | null;
   /** Ajustes de imagem: 100/100/100/0/0 = original. */
   filters?: ElementFilters | null;
