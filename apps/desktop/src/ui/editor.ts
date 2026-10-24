@@ -18,13 +18,13 @@ import {
 import { exportPdf, isDesktop, saveProjectFile } from "../bridge";
 import { store } from "../store";
 import type { Element, Page, TextAlign } from "../types";
-import { captureVideoPoster, clamp, esc, materializeMedia, mediaSource, toCss } from "../util";
+import { clamp, esc, materializeMedia, mediaSource, toCss } from "../util";
 import { agentPanelHtml, bindAgentPanel } from "./agent";
 import { icons } from "./icons";
 import { downloadPagePng, pageThumbnail } from "./export-image";
 import { openMenuAt, openShortcuts } from "./menu";
 import { displayCaptureSupported, openRecorder, recorderSupported, type RecordedVideo } from "./record";
-import { applyElement, renderElement, renderThumb } from "./render";
+import { applyElement, createVideoPlayer, renderElement, renderThumb } from "./render";
 
 type DragMode = "move" | "resize" | "rotate" | "pan" | "marquee";
 
@@ -1754,7 +1754,7 @@ export class EditorView {
 
   /** Reproduz/pausa um vídeo do canvas (um por vez, para não travar). */
   private toggleVideo(node: HTMLElement): void {
-    const video = node.querySelector<HTMLVideoElement>("video");
+    const video = node.querySelector<HTMLVideoElement>("video") ?? createVideoPlayer(node);
     if (!video) {
       store.toast("Este vídeo não pôde ser aberto pelo sistema.", "error");
       return;
@@ -1810,7 +1810,6 @@ export class EditorView {
     const h = w * ratio;
     const el = baseElement("video", (page.width - w) / 2, Math.max(16, (page.height - h) / 2), w, h);
     el.src = src;
-    el.poster = await captureVideoPoster(src);
     el.fit = "cover";
     el.name = video.file.name;
     store.addElement(el);
@@ -1824,7 +1823,12 @@ export class EditorView {
     input.addEventListener("change", async () => {
       const file = input.files?.[0];
       if (!file) return;
-      await this.importMedia(file, replaceId);
+      try {
+        await this.importMedia(file, replaceId);
+      } catch (error) {
+        console.error("Falha ao importar mídia", error);
+        store.toast("Não foi possível importar o arquivo. Tente outro arquivo ou envie o erro do terminal.", "error");
+      }
     });
     input.click();
   }
@@ -1832,12 +1836,12 @@ export class EditorView {
   /**
    * Importa imagem ou vídeo sem travar a interface.
    *
-   * A mídia entra como `blob:` (nunca base64 no estado), a decodificação
-   * acontece depois do próximo frame e o elemento só é criado no fim — assim
-   * arquivos grandes não bloqueiam o arraste nem o histórico.
+   * Vídeo entra como referência blob e cartão estático, sem criar <video>,
+   * ler metadados, buscar frames ou acionar codecs nativos. Timeouts JS não
+   * protegem de um travamento no GStreamer/WebKitGTK durante a decodificação.
    */
   private async importMedia(file: File, replaceId?: string, point?: { x: number; y: number }): Promise<void> {
-    const isVideo = file.type.startsWith("video/");
+    const isVideo = file.type.startsWith("video/") || (!file.type && /\.(mp4|m4v|mov|webm|mkv|avi|ogv|mpeg|mpg)$/i.test(file.name));
     const isImage = file.type.startsWith("image/");
     if (!isVideo && !isImage) {
       store.toast("Formato não suportado aqui. Use imagem ou vídeo.", "error");
@@ -1853,29 +1857,7 @@ export class EditorView {
     const page = store.page;
     let width = 0;
     let height = 0;
-    let poster: string | null = null;
-    if (isVideo) {
-      const probe = document.createElement("video");
-      probe.preload = "metadata";
-      probe.muted = true;
-      probe.playsInline = true;
-      probe.src = src;
-      width = await new Promise<number>((resolve) => {
-        const done = (): void => resolve(probe.videoWidth);
-        probe.addEventListener("loadedmetadata", done, { once: true });
-        probe.addEventListener("error", () => resolve(0), { once: true });
-        window.setTimeout(() => resolve(probe.videoWidth), 2500);
-      });
-      height = probe.videoHeight;
-      probe.removeAttribute("src");
-      probe.load();
-      if (!width) {
-        store.toast("Não consegui ler a prévia deste vídeo. O arquivo será inserido sem prévia; o codec pode não ser compatível com o sistema.", "error");
-      } else {
-        // Quadro congelado: o canvas mostra a imagem em vez de decodificar vídeo.
-        poster = await captureVideoPoster(src);
-      }
-    } else {
+    if (!isVideo) {
       const img = new Image();
       img.src = src;
       await new Promise((resolve) => {
@@ -1891,7 +1873,7 @@ export class EditorView {
     }
 
     if (replaceId) {
-      store.updateElement(replaceId, { src, name: file.name, poster });
+      store.updateElement(replaceId, { src, name: file.name, poster: null });
       store.toast("Mídia trocada.", "success");
       return;
     }
@@ -1908,11 +1890,10 @@ export class EditorView {
     node.src = src;
     node.fit = "cover";
     node.name = file.name;
-    if (isVideo) node.poster = poster;
     store.addElement(node);
     store.toast(
       isVideo
-        ? "Vídeo inserido (quadro parado). Duplo clique ou ▶ no inspetor para reproduzir."
+        ? "Vídeo adicionado sem decodificar. Duplo clique ou ▶ no inspetor para reproduzir."
         : "Imagem inserida.",
       "success",
     );

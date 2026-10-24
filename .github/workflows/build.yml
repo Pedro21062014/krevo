@@ -57,6 +57,16 @@ jobs:
       - name: Checar tipos e buildar a interface
         working-directory: apps/desktop
         run: npm run build
+      - name: Testar importação com backend de vídeo bloqueado (WebKit Linux)
+        working-directory: apps/desktop
+        env:
+          TEST_BROWSER: webkit
+        run: |
+          npx playwright install --with-deps webkit
+          npm run dev -- --port 5173 > /tmp/krevo-vite.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          node tests/video-import.mjs
       - uses: actions/upload-artifact@v4
         with:
           name: krevo-pdf-demo

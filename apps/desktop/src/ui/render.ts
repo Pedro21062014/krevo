@@ -114,40 +114,29 @@ export function applyElement(
       if (node.dataset.src !== src || kindChanged) {
         node.replaceChildren();
         node.classList.remove("media-error", "playing");
-        if (el.kind === "video" && thumb) {
-          // Miniaturas (páginas, faixa e início) mostram o quadro congelado:
-          // colocar <video> ali criava um decodificador por miniatura e era
-          // isso que travava o app no AppImage.
+        if (el.kind === "video") {
+          // Import/repaint must not create HTMLVideoElement: even setting src
+          // with preload=none can activate the native WebKitGTK media backend.
           if (el.poster) {
             const img = document.createElement("img");
             img.src = el.poster;
             img.alt = el.name || "Vídeo";
             img.draggable = false;
             node.appendChild(img);
+          } else {
+            const card = document.createElement("div");
+            card.className = "video-placeholder";
+            const symbol = document.createElement("span");
+            symbol.textContent = "▶";
+            symbol.setAttribute("aria-hidden", "true");
+            const title = document.createElement("strong");
+            title.textContent = el.name || "Vídeo";
+            const hint = document.createElement("small");
+            hint.textContent = thumb ? "Vídeo" : "Prévia desativada · duplo clique para reproduzir";
+            card.append(symbol, title, hint);
+            node.appendChild(card);
           }
-        } else if (el.kind === "video") {
-          const video = document.createElement("video");
-          video.src = src;
-          video.muted = true;
-          video.loop = false;
-          video.autoplay = false;
-          video.playsInline = true;
-          video.preload = "none";
-          video.setAttribute("playsinline", "");
-          if (el.poster) video.setAttribute("poster", el.poster);
-          node.dataset.name = el.name || "vídeo";
-          video.addEventListener("error", () => node.classList.add("media-error"));
-          // Um vídeo tocando por vez: dois decodificadores simultâneos já
-          // deixam a interface aos soluços em máquinas sem aceleração.
-          video.addEventListener("play", () => {
-            document.querySelectorAll<HTMLVideoElement>(".kf-el.video video").forEach((other) => {
-              if (other !== video) other.pause();
-            });
-            node.classList.add("playing");
-          });
-          video.addEventListener("pause", () => node.classList.remove("playing"));
-          video.addEventListener("ended", () => node.classList.remove("playing"));
-          node.appendChild(video);
+          node.dataset.name = el.name || "Vídeo";
         } else {
           const img = document.createElement("img");
           img.src = src;
@@ -193,6 +182,35 @@ export function applyElement(
 
   if (!interactive) node.style.pointerEvents = "none";
   else node.style.pointerEvents = "";
+}
+
+/** Called ONLY after an explicit user playback action, never while importing. */
+export function createVideoPlayer(node: HTMLElement): HTMLVideoElement | null {
+  const src = node.dataset.src;
+  if (!src) return null;
+  const video = document.createElement("video");
+  video.preload = "none";
+  video.autoplay = false;
+  video.muted = true;
+  video.playsInline = true;
+  video.style.objectFit = node.querySelector("img")?.style.objectFit || "contain";
+  const poster = node.querySelector("img")?.getAttribute("src");
+  if (poster) video.poster = poster;
+  video.addEventListener("play", () => {
+    document.querySelectorAll<HTMLVideoElement>(".kf-el.video video").forEach(other => {
+      if (other !== video) other.pause();
+    });
+    node.classList.add("playing");
+  });
+  video.addEventListener("pause", () => node.classList.remove("playing"));
+  video.addEventListener("ended", () => node.classList.remove("playing"));
+  video.addEventListener("error", () => {
+    node.classList.remove("playing");
+    node.classList.add("media-error");
+  });
+  node.replaceChildren(video);
+  video.src = src;
+  return video;
 }
 
 /** Cria o nó DOM de um elemento (usado no canvas e nas miniaturas). */

@@ -2476,3 +2476,20 @@ html[data-theme="light"] .kf-page {
   display: block;
   background: #0b0d10;
 }
+
+/* Importação segura: cartão DOM sem pipeline de vídeo/codec nativo. */
+.video-placeholder {
+  box-sizing: border-box;
+  width: 100%; height: 100%;
+  display: flex; flex-direction: column;
+  justify-content: center; align-items: center;
+  gap: 10px; padding: 16px;
+  background: #14171c; color: #e9ecf0;
+  overflow: hidden; text-align: center;
+}
+.video-placeholder > span { font-size: 30px; color: #35d39f; }
+.video-placeholder > strong {
+  display: block; max-width: 100%; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; font-size: 16px;
+}
+.video-placeholder > small { color: #a4abb6; font-size: 12px; }
